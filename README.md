@@ -1,45 +1,74 @@
-# Buddy Customizer
+# 🍄 Buddy Evolver | Claude Code Plugin
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)
 
-> Evolve your Claude Code Buddy terminal pet — feed it a psychedelic mushroom and watch it transform into your dream companion.
+> Your buddy found a psychedelic mushroom. What happens next is entirely up to you.
 
-18 species | 5 rarity tiers | custom emoji, name, personality & stats
+Pick the species. Choose the rarity. Name it. Define its personality. Max out its stats. This isn't random evolution — **you design every detail**, then watch your buddy transform like a Pokemon eating a Super Mushroom.
+
+18 species 🧬 | 5 rarity tiers ⭐ | custom emoji 🎨 | your name ✏️ | your personality 💬 | your stats 📊
+
+### 🎬 Here's what it looks like
+
+**You choose everything:**
 
 ```
-  Your buddy Claude waddles up curiously...
+🍄 What species should your buddy evolve into?
+  > 🐲 dragon — Fearsome fire-breather
+    🐱 cat — Mysterious and independent
+    🦎 axolotl — Adorable regenerating amphibian
+    🦫 capybara — Chill vibes only
 
-      .---.
-      (o>o)       ? ?
-     /(   )\
-      `---'
+⭐ What rarity tier?
+  > ✨ legendary — The rarest of the rare
 
-  Claude eats the mushroom...
+🎨 What emoji represents your buddy?
+  > 🐲
 
-      * * * * * * * * * *
-      *                 *
-      *       >>        *
-      *                 *
-      * * * * * * * * * *
+✏️  What should your evolved buddy be named?
+  > Aethos
 
-  Claude evolved into Aethos the Dragon!
+💬 Describe your buddy's personality:
+  > Ancient dragon who mass speaks in mass riddles
+
+📊 How should stats be distributed?
+  > All maxed (99) — Every stat at maximum
+```
+
+**Then the magic happens:**
+
+```
+    ✨✨✨✨✨✨✨✨✨✨
+    ✨                ✨
+    ✨       🐲       ✨
+    ✨                ✨
+    ✨✨✨✨✨✨✨✨✨✨
+
+  Claude evolved into Aethos!
+
+  ★ LEGENDARY            DRAGON
+
+    Aethos
+    "Ancient dragon who speaks in riddles"
+
+    DEBUGGING  ████████████  99
+    PATIENCE   ████████████  99
+    CHAOS      ████████████  99
+    WISDOM     ████████████  99
+    SNARK      ████████████  99
 ```
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Commands](#commands)
-  - [/buddy evolve](#buddy-evolve)
-  - [/buddy reset](#buddy-reset)
-  - [/test-patch](#test-patch)
-  - [/update-species-map](#update-species-map)
 - [Species](#species)
 - [Rarity Tiers](#rarity-tiers)
 - [Stats](#stats)
@@ -52,20 +81,24 @@
 
 ---
 
-## Prerequisites
+<a id="prerequisites"></a>
+
+## 📦 Prerequisites
 
 Before installing, make sure you have:
 
-- **macOS** — required (uses `codesign` for binary re-signing)
-- **Python 3** — ships with macOS; verify with `python3 --version`
-- **Claude Code** — CLI version with the Buddy feature
+- 🍎 **macOS** — required (uses `codesign` for binary re-signing)
+- 🐍 **Python 3** — ships with macOS; verify with `python3 --version`
+- 🤖 **Claude Code** — CLI version with the Buddy feature
 
 ---
 
-## Install
+<a id="install"></a>
+
+## 🔧 Install
 
 ```bash
-claude plugin add github:Soul-Craft/Buddy
+claude plugin add github:Soul-Craft/buddy-evolver
 ```
 
 Then restart Claude Code:
@@ -78,41 +111,49 @@ This adds three slash commands: `/buddy`, `/test-patch`, and `/update-species-ma
 
 ---
 
-## Quick Start
+<a id="quick-start"></a>
 
-1. Run `/buddy evolve`
-2. Follow the prompts — pick species, rarity, emoji, name, personality, and stats
-3. Restart Claude Code — your new buddy appears
+## 🎮 Quick Start
 
-The whole process takes about 60 seconds. To revert anytime: `/buddy reset`
+**Press START on your evolution adventure:**
+
+1. 🍄 Run `/buddy evolve`
+2. 🎨 Design your buddy — pick species, rarity, emoji, name, personality, and stats
+3. ✨ Restart Claude Code — your new companion appears
+
+The whole process takes about 60 seconds. Every choice is yours.
+
+To revert anytime: `/buddy reset` 🔄
 
 ---
 
-## Commands
+<a id="commands"></a>
+
+## 🕹️ Commands
 
 ### `/buddy evolve`
 
-Interactive evolution experience in four acts:
+Your buddy's evolution unfolds in four acts — like a classic RPG cutscene:
 
-**Act 1 — Discovery.** Your current buddy encounters a mysterious mushroom.
+**🍄 Act 1 — Discovery.** Your current buddy stumbles upon a mysterious psychedelic mushroom.
 
-**Act 2 — Choices.** Six customization steps:
-1. **Species** — Pick from 18 species (dragon, cat, axolotl, capybara, and more)
-2. **Rarity** — Choose a tier from legendary to common
-3. **Emoji** — Any emoji to represent your buddy in the terminal
-4. **Name** — Give your evolved buddy a name
-5. **Personality** — A sentence or two shown on the buddy card
-6. **Stats** — Max all, pick a preset (Chaos Gremlin, Zen Master), or set each individually
+**🎨 Act 2 — Design.** Six customization steps where you control everything:
+1. **🧬 Species** — Pick from 18 species (dragon, cat, axolotl, capybara, and 14 more)
+2. **⭐ Rarity** — Choose a tier from legendary to common
+3. **🎭 Emoji** — Any emoji to represent your buddy in the terminal
+4. **✏️ Name** — Give your evolved buddy a name
+5. **💬 Personality** — A sentence or two shown on the buddy card
+6. **📊 Stats** — Max all, pick a preset (Chaos Gremlin, Zen Master), or set each individually
 
-**Act 3 — Evolution.** Confirmation summary and sparkle animation while the binary is patched.
+**✨ Act 3 — Evolution.** Confirmation summary, then sparkles fly as the binary is patched. Level-up complete.
 
-**Act 4 — Reveal.** Your evolved buddy card with stats, personality, and rarity badge.
+**🎉 Act 4 — Reveal.** Your evolved buddy card appears with stats, personality, and rarity badge. Like opening a legendary pack.
 
-All evolved buddies are shiny by default. A backup of the original binary is created automatically before any changes.
+All evolved buddies are ✨ shiny by default. A backup of the original binary is created automatically — your save file is always safe.
 
 ### `/buddy reset`
 
-Restores your original buddy by reverting all binary patches and companion data.
+🔄 Restores your original buddy by reverting all patches.
 
 - Restores both the binary and `~/.claude.json`
 - Safe to run anytime — does nothing if no backup exists
@@ -120,109 +161,125 @@ Restores your original buddy by reverting all binary patches and companion data.
 
 ### `/test-patch`
 
-Dry-run validation of binary compatibility. Run this after Claude Code updates to check if the patching anchors still match.
+🧪 Dry-run validation of binary compatibility. Run this after Claude Code updates to check if the patching anchors still match.
 
 Reports pass/fail for each patch type:
-- Species array
-- Rarity weights
-- Shiny threshold
-- Art templates
-- Soul (companion data)
+- 🧬 Species array
+- ⭐ Rarity weights
+- ✨ Shiny threshold
+- 🎭 Art templates
+- 💬 Soul (companion data)
 
 If any fail, the plugin suggests running `/update-species-map`.
 
 ### `/update-species-map`
 
-**Advanced.** Investigates the binary when anchor patterns break after a major Claude Code update. Searches for updated variable names and proposes code updates.
+🔬 **Advanced.** Investigates the binary when anchor patterns break after a major Claude Code update. Searches for updated variable names and proposes code updates.
 
-Most users will never need this — it's for when `/test-patch` reports failures.
+Most players will never need this — it's for when `/test-patch` reports failures.
 
 ---
 
-## Species
+<a id="species"></a>
+
+## 🧬 Species
 
 Choose from 18 species during evolution:
 
 | | | | |
 |---|---|---|---|
-| duck | goose | blob | cat |
-| dragon | octopus | owl | penguin |
-| turtle | snail | axolotl | ghost |
-| robot | mushroom | cactus | rabbit |
-| chonk | capybara | | |
+| 🦆 duck | 🪿 goose | 🫠 blob | 🐱 cat |
+| 🐲 dragon | 🐙 octopus | 🦉 owl | 🐧 penguin |
+| 🐢 turtle | 🐌 snail | 🦎 axolotl | 👻 ghost |
+| 🤖 robot | 🍄 mushroom | 🌵 cactus | 🐇 rabbit |
+| 🐖 chonk | 🦫 capybara | | |
 
 ---
 
-## Rarity Tiers
+<a id="rarity-tiers"></a>
 
-Rarity determines how often your buddy reacts to your work:
+## ⭐ Rarity Tiers
+
+Rarity determines how often your buddy reacts to your work — like a companion's chattiness slider:
 
 | Tier | Reaction Rate | Vibe |
 |------|:---:|---|
-| **Legendary** | 50% | Reacts to half of everything |
-| **Epic** | 35% | Frequent companion chatter |
-| **Rare** | 25% | Regular reactions |
-| **Uncommon** | 15% | Occasional commentary |
-| **Common** | 5% | The strong, silent type |
+| **✨ Legendary** | 50% | Main character energy — reacts to everything |
+| **💎 Epic** | 35% | Hype beast — always in the mix |
+| **🔮 Rare** | 25% | Solid sidekick energy |
+| **🌿 Uncommon** | 15% | Occasional words of wisdom |
+| **🪨 Common** | 5% | The strong, silent type |
 
 ---
 
-## Stats
+<a id="stats"></a>
 
-Five stats, each ranging 0–99. Choose a preset during evolution or set each one manually:
+## 📊 Stats
 
-| Stat | Flavor |
-|------|--------|
-| **DEBUGGING** | How tenaciously your buddy hunts bugs |
-| **PATIENCE** | Tolerance for long builds and slow tests |
-| **CHAOS** | Tendency toward creative mischief |
-| **WISDOM** | Depth of sage advice offered |
-| **SNARK** | Sharpness of witty commentary |
+Five RPG stats, each ranging 0–99. Choose a preset during evolution or min-max to your heart's content:
 
-**Presets:** All Maxed (99 across the board), Chaos Gremlin (99 CHAOS, low everything else), Zen Master (99 WISDOM and PATIENCE), or fully Custom.
+| Stat | What It Does |
+|------|-------------|
+| **🐛 DEBUGGING** | How tenaciously your buddy hunts bugs |
+| **⏳ PATIENCE** | Tolerance for long builds and slow tests |
+| **🌀 CHAOS** | Tendency toward creative mischief |
+| **🧠 WISDOM** | Depth of sage advice offered |
+| **😏 SNARK** | Sharpness of witty commentary |
+
+**Presets:**
+- 💪 **All Maxed** — 99 across the board, the power fantasy
+- 🌀 **Chaos Gremlin** — 99 CHAOS, low everything else
+- 🧘 **Zen Master** — 99 WISDOM and PATIENCE, inner peace
+- 🎛️ **Custom** — Set each stat yourself, RPG style
 
 ---
 
-## How It Works
+<a id="how-it-works"></a>
+
+## 🔬 How It Works
 
 The plugin patches the Claude Code binary (a Bun-compiled Mach-O executable) to swap your buddy's species, rarity, shiny status, and ASCII art. Name and personality are written to `~/.claude.json` separately.
 
-Key points:
+The important bits:
 
-- All patches maintain **exact byte length** to preserve binary integrity
-- Patterns are located by searching for known anchors, not hardcoded offsets
-- The original binary is **backed up automatically** before any changes
-- After patching, the binary is re-signed with `codesign`
-- Everything is fully reversible with `/buddy reset`
+- 📏 All patches maintain **exact byte length** — like fitting new sprites into the same cartridge
+- 🔍 Patterns are located by anchor searching, not hardcoded offsets
+- 💾 The original binary is **backed up automatically** before any changes — your save file is safe
+- 🔏 After patching, the binary is re-signed with `codesign`
+- 🔄 Everything is fully reversible with `/buddy reset`
 
 ---
 
-## After Claude Code Updates
+<a id="after-claude-code-updates"></a>
 
-Claude Code auto-updates replace the patched binary, which reverts your buddy to default. This is expected.
+## 🔄 After Claude Code Updates
 
-**To re-apply your customization:**
+Claude Code auto-updates replace the patched binary, which reverts your buddy to default. Don't panic — your buddy remembers who they are.
+
+**To re-evolve:**
 
 ```
 /buddy evolve
 ```
 
-Your preferences are saved, so re-application is quick — just confirm your choices and go.
+Your preferences are saved, so re-application is quick — just confirm your choices and go. Like re-equipping your gear after a save reload. ⚔️
 
 **If patching fails after an update:**
 
-1. Run `/test-patch` to check which anchors broke
-2. If failures found, run `/update-species-map` or [file an issue](https://github.com/Soul-Craft/Buddy/issues)
-3. Your backup is safe and unaffected by updates
+1. 🧪 Run `/test-patch` to check which anchors broke
+2. 🔬 If failures found, run `/update-species-map` or [file an issue](https://github.com/Soul-Craft/buddy-evolver/issues)
+3. 💾 Your backup is safe and unaffected by updates
 
 ---
 
-## Troubleshooting
+<a id="troubleshooting"></a>
+
+## 🩹 Troubleshooting
 
 <details>
-<summary><b>My buddy didn't change after evolving</b></summary>
+<summary>🔄 <b>My buddy didn't change after evolving</b></summary>
 
-You need to restart Claude Code after evolution. Run:
+You need to restart Claude Code after evolution — like rebooting after installing a mod:
 
 ```bash
 pkill -f claude && claude
@@ -231,7 +288,7 @@ pkill -f claude && claude
 </details>
 
 <details>
-<summary><b>codesign failed</b></summary>
+<summary>🔏 <b>codesign failed</b></summary>
 
 Make sure you're on macOS. Verify the binary path resolves:
 
@@ -244,7 +301,7 @@ If the path is broken, Claude Code may need to be reinstalled.
 </details>
 
 <details>
-<summary><b>Pattern not found / anchor warnings</b></summary>
+<summary>⚠️ <b>Pattern not found / anchor warnings</b></summary>
 
 Claude Code updated and the binary structure changed. Run `/test-patch` to check compatibility, then `/update-species-map` if needed.
 
@@ -253,29 +310,31 @@ Your existing buddy still works — only re-customization is affected until patt
 </details>
 
 <details>
-<summary><b>I want to change my buddy again</b></summary>
+<summary>🔁 <b>I want to change my buddy again</b></summary>
 
-Just run `/buddy evolve` again. No need to reset first — the script is re-runnable.
+Just run `/buddy evolve` again! No need to reset first — the script is re-runnable. Redesign as many times as you want.
 
 </details>
 
 <details>
-<summary><b>Can I use this on Linux or Windows?</b></summary>
+<summary>🐧 <b>Can I use this on Linux or Windows?</b></summary>
 
 Not currently. The plugin requires macOS `codesign` for binary re-signing after patching.
 
 </details>
 
 <details>
-<summary><b>Is this safe? Can it break Claude Code?</b></summary>
+<summary>🛡️ <b>Is this safe? Can it break Claude Code?</b></summary>
 
-The original binary is always backed up before changes. Run `/buddy reset` to restore it at any time. In the worst case, reinstalling Claude Code gives you a fresh binary.
+The original binary is always backed up before changes — like a save state before the boss fight. Run `/buddy reset` to restore it at any time. In the worst case, reinstalling Claude Code gives you a fresh binary.
 
 </details>
 
 ---
 
-## Uninstall
+<a id="uninstall"></a>
+
+## 🗑️ Uninstall
 
 If you've customized your buddy, reset first:
 
@@ -286,21 +345,25 @@ If you've customized your buddy, reset first:
 Then remove the plugin:
 
 ```bash
-claude plugin remove buddy-customizer
+claude plugin remove buddy-evolver
 ```
 
 If you skip the reset, your customized buddy remains until the next Claude Code auto-update replaces the binary.
 
 ---
 
-## Contributing
+<a id="contributing"></a>
 
-Issues and PRs welcome at [github.com/Soul-Craft/Buddy](https://github.com/Soul-Craft/Buddy).
+## 🤝 Contributing
 
-If you modify `scripts/patch-buddy.py`, every binary patch **must** produce output identical in byte length to the original. Test with `--dry-run` before committing.
+Issues and PRs welcome at [github.com/Soul-Craft/buddy-evolver](https://github.com/Soul-Craft/buddy-evolver).
+
+If you modify `scripts/patch-buddy.py`, every binary patch **must** produce output identical in byte length to the original — like fitting new sprites into the same ROM. Test with `--dry-run` before committing.
 
 ---
 
-## License
+<a id="license"></a>
+
+## 📄 License
 
 [MIT](LICENSE)
