@@ -15,7 +15,7 @@ Restart Claude Code after installing.
 ## Quick Start
 
 ```
-/customize-buddy
+/buddy evolve
 ```
 
 An interactive evolution ceremony walks you through every choice:
@@ -27,7 +27,7 @@ An interactive evolution ceremony walks you through every choice:
 
 To revert anytime:
 ```
-/restore-buddy
+/buddy reset
 ```
 
 ## Species
@@ -54,9 +54,9 @@ To revert anytime:
 
 The plugin patches the Claude Code Mach-O binary to swap your buddy's species, rarity weights, shiny threshold, and ASCII art. It also writes your buddy's name and personality to `~/.claude.json`.
 
-All patches maintain exact byte length to preserve binary integrity. The original binary is backed up automatically before any changes and can be fully restored with `/restore-buddy`.
+All patches maintain exact byte length to preserve binary integrity. The original binary is backed up automatically before any changes and can be fully restored with `/buddy reset`.
 
-**Important**: Claude Code auto-updates replace the patched binary. Run `/customize-buddy` again after updates — your preferences are saved and can be re-applied instantly.
+**Important**: Claude Code auto-updates replace the patched binary. Run `/buddy evolve` again after updates — your preferences are saved and can be re-applied instantly.
 
 ## Requirements
 

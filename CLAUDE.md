@@ -7,8 +7,7 @@ Claude Code plugin that customizes the terminal Buddy pet by patching the Mach-O
 ```
 .claude-plugin/plugin.json    Plugin manifest (name, version, metadata)
 .claude/settings.json         Hooks (byte-length invariant reminder)
-skills/customize-buddy/       Interactive evolution ceremony (/customize-buddy)
-skills/restore-buddy/         Revert to original buddy (/restore-buddy)
+skills/buddy/                 Main skill (/buddy evolve, /buddy reset)
 skills/test-patch/            Dry-run validation (/test-patch)
 skills/update-species-map/    Binary version maintenance (/update-species-map)
 scripts/patch-buddy.py        Binary patching engine (Python 3)
@@ -36,14 +35,14 @@ After patching, the binary is re-signed with `codesign --force --sign -`.
 ### Data flow
 
 ```
-/customize-buddy
+/buddy evolve
   → Reads current buddy from ~/.claude.json
   → Collects choices (species, rarity, emoji, name, personality, stats)
   → Runs: python3 $CLAUDE_PLUGIN_ROOT/scripts/patch-buddy.py --species X --rarity Y ...
   → Script backs up binary + soul, patches binary, re-signs, saves metadata
   → User restarts Claude Code
 
-/restore-buddy
+/buddy reset
   → Checks for backup at <binary>.original-backup
   → Copies backup over current binary, restores ~/.claude.json
   → Re-signs binary

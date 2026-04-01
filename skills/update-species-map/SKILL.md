@@ -121,4 +121,4 @@ If patterns are missing, analyze the differences:
 
 ### 6. Update the reference doc
 
-If changes were needed and applied, also update `${CLAUDE_PLUGIN_ROOT}/skills/customize-buddy/references/species-map.md` with the new variable mappings and binary version.
+If changes were needed and applied, also update `${CLAUDE_PLUGIN_ROOT}/skills/buddy/references/species-map.md` with the new variable mappings and binary version.
