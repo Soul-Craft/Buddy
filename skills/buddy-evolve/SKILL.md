@@ -148,7 +148,8 @@ After the script succeeds, display the evolved buddy:
 Then tell the user:
 ```
 ⚠️  Restart Claude Code to see your evolved buddy:
-   pkill -f claude && claude
+   exit
+   claude
    Then run /buddy
 
 To revert anytime: /buddy-reset

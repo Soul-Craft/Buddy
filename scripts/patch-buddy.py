@@ -80,6 +80,19 @@ def ensure_backup(binary_path: Path) -> None:
         print(f"  [+] Soul backed up to {soul_backup}")
 
 
+def verify_binary(binary_path: Path) -> bool:
+    """Run patched binary with --version to verify it's not corrupted."""
+    try:
+        result = subprocess.run(
+            [str(binary_path), "--version"],
+            capture_output=True,
+            timeout=5,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+
+
 def restore_backup(binary_path: Path) -> bool:
     """Restore binary and soul from backups."""
     backup = binary_path.parent / f"{binary_path.name}.original-backup"
@@ -510,6 +523,18 @@ def main():
             f.write(data)
         print(f"  [+] Wrote {len(data):,} bytes with {total_patches} patches")
         resign_binary(binary_path)
+
+        # Verify patched binary still works
+        print("  [~] Verifying patched binary...")
+        if verify_binary(binary_path):
+            print("  [+] Binary verification passed")
+        else:
+            print()
+            print("  [!] Patched binary failed verification — restoring backup...")
+            restore_backup(binary_path)
+            print("  [!] Your original buddy has been restored. No harm done.")
+            print("  [!] Run /test-patch to check if anchor patterns need updating.")
+            sys.exit(1)
 
     # Patch soul (separate from binary)
     if args.name or args.personality:
