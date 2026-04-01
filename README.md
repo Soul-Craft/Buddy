@@ -1,10 +1,10 @@
 # 🍄 Buddy Customizer
 
-Evolve your Claude Code Buddy terminal pet into your dream companion.
+> Evolve your Claude Code Buddy terminal pet — feed it a psychedelic mushroom and watch it transform into your dream companion.
 
-Feed your buddy a psychedelic mushroom and watch it transform — choose any species, rarity, custom emoji, name, personality, and stats.
+Choose any species, rarity, custom emoji, name, personality, and stats.
 
-## Installation
+## Install
 
 ```
 claude plugin add github:Soul-Craft/Buddy
@@ -12,54 +12,57 @@ claude plugin add github:Soul-Craft/Buddy
 
 Restart Claude Code after installing.
 
-## Usage
+## Quick Start
 
-### Customize your buddy
 ```
 /customize-buddy
 ```
-Launches an interactive evolution ceremony:
-1. Your current buddy discovers a mysterious 🍄 mushroom
-2. You choose species, rarity, emoji, name, personality, and stats
-3. Your buddy evolves with a sparkle animation
-4. Restart Claude Code and run `/buddy` to see your new companion
 
-### Restore original buddy
+An interactive evolution ceremony walks you through every choice:
+
+1. 🍄 Your buddy discovers a mysterious mushroom
+2. 🎭 Pick species, rarity, emoji, name, personality, and stats
+3. ✨ Watch the evolution animation
+4. 🔄 Restart Claude Code — run `/buddy` to meet your new companion
+
+To revert anytime:
 ```
 /restore-buddy
 ```
-Reverts all changes and restores your original buddy.
 
-## Available Species
+## Species
 
-duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara
+| | | | |
+|---|---|---|---|
+| 🦆 duck | 🪿 goose | 🫠 blob | 🐱 cat |
+| 🐲 dragon | 🐙 octopus | 🦉 owl | 🐧 penguin |
+| 🐢 turtle | 🐌 snail | 🦎 axolotl | 👻 ghost |
+| 🤖 robot | 🍄 mushroom | 🌵 cactus | 🐇 rabbit |
+| 🐖 chonk | 🦫 capybara | | |
 
 ## Rarity Tiers
 
-| Tier | Reaction Rate | Description |
-|------|--------------|-------------|
-| common | 5% | Your buddy rarely speaks up |
-| uncommon | 15% | Occasional commentary |
-| rare | 25% | Regular reactions |
-| epic | 35% | Frequent companion chatter |
-| legendary | 50% | Reacts to half of everything you do |
+| Tier | Reaction Rate | Vibe |
+|------|:---:|---|
+| **Legendary** | 50% | Reacts to half of everything |
+| **Epic** | 35% | Frequent companion chatter |
+| **Rare** | 25% | Regular reactions |
+| **Uncommon** | 15% | Occasional commentary |
+| **Common** | 5% | The strong, silent type |
 
 ## How It Works
 
-The plugin patches the Claude Code Mach-O binary to customize your buddy:
-- Species array variable references (3-byte swaps in the Bun bytecode)
-- Rarity probability weights (digit replacement)
-- Shiny threshold (guarantees shiny for evolved buddies)
-- ASCII art templates (replaced with custom emoji)
-- Companion soul in `~/.claude.json` (name, personality)
+The plugin patches the Claude Code Mach-O binary to swap your buddy's species, rarity weights, shiny threshold, and ASCII art. It also writes your buddy's name and personality to `~/.claude.json`.
 
-All patches maintain exact byte length. The binary is re-signed with an ad-hoc codesign after patching. Your original binary is backed up automatically and can be restored at any time with `/restore-buddy`.
+All patches maintain exact byte length to preserve binary integrity. The original binary is backed up automatically before any changes and can be fully restored with `/restore-buddy`.
 
-## Caveats
+**Important**: Claude Code auto-updates replace the patched binary. Run `/customize-buddy` again after updates — your preferences are saved and can be re-applied instantly.
 
-- **macOS only** (requires `codesign`)
-- **Auto-updates reset patches** — Claude Code updates replace the binary. Run `/customize-buddy` again after updates (your preferences are saved and can be re-applied)
-- **Version-specific** — The script uses pattern matching for portability, but major Claude Code refactors may require script updates
+## Requirements
+
+- **macOS** (uses `codesign` for binary re-signing)
+- **Python 3** (ships with macOS)
+- **Claude Code** (CLI version with Buddy feature)
 
 ## Uninstall
 
