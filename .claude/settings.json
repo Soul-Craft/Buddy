@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(python3 *patch-buddy.py*)",
+      "Bash(*readlink ~/.local/bin/claude*)",
+      "Bash(*import json*claude.json*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
