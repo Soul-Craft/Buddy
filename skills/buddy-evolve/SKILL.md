@@ -16,7 +16,7 @@ Run pre-flight checks:
 BINARY=$(readlink ~/.local/bin/claude 2>/dev/null || echo "NOT_FOUND")
 echo "Binary: $BINARY"
 file "$BINARY" 2>/dev/null
-python3 -c "import json,os; c=json.load(open(os.path.expanduser('~/.claude.json'))); print(json.dumps(c.get('companion',{}), indent=2))" 2>/dev/null
+plutil -extract companion json -o - ~/.claude.json 2>/dev/null || echo "{}"
 ```
 
 Read the current buddy name and species from the output. Then display the discovery scene — the current buddy encountering a mysterious mushroom. Use the buddy's actual name and match the ASCII art to the current species:
@@ -166,7 +166,7 @@ Evolving...
 
 Run the patching script:
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/patch-buddy.py" \
+"${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" \
   --species [species] \
   --rarity [rarity] \
   --shiny \

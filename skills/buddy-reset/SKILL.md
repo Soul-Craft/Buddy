@@ -30,7 +30,7 @@ Ask: "This will restore your original buddy and revert all customizations. Conti
 ## Step 4: Execute restore
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/patch-buddy.py" --restore
+"${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" --restore
 ```
 
 ## Step 5: Instruct user

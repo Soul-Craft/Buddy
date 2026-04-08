@@ -19,78 +19,20 @@ echo "Version: $(basename "$BINARY")"
 echo "Size: $(wc -c < "$BINARY" 2>/dev/null) bytes"
 ```
 
-### 2. Search for the species anchor pattern
+### 2. Run binary analysis
 
-The current anchor is `b0_,I0_,x0_,u0_,` — the first four species variable refs in the Trq array. Search the binary:
-
-```bash
-python3 -c "
-data = open('$(readlink ~/.local/bin/claude)', 'rb').read()
-anchor = b'b0_,I0_,x0_,u0_,'
-idx = data.find(anchor)
-if idx >= 0:
-    print(f'  [+] Anchor found at offset 0x{idx:x}')
-    # Extract surrounding context (the full species array)
-    start = max(0, idx - 20)
-    end = min(len(data), idx + 200)
-    region = data[start:end]
-    # Find the array bounds
-    arr_start = region.rfind(b'[')
-    arr_end = region.find(b']', idx - start)
-    if arr_start >= 0 and arr_end >= 0:
-        array_content = region[arr_start:arr_end+1].decode('ascii', errors='replace')
-        print(f'  [+] Species array: {array_content}')
-else:
-    print('  [!] Anchor NOT FOUND — binary structure has changed')
-    # Search for any 3-char comma pattern that looks like variable refs
-    import re
-    # Look for patterns like X0_,Y0_, which are the variable ref format
-    matches = set(re.findall(rb'([A-Za-z][0-9]_)', data))
-    candidates = sorted(m.decode() for m in matches)
-    print(f'  [?] Found {len(candidates)} potential 3-byte variable refs:')
-    for c in candidates[:30]:
-        print(f'      {c}')
-"
-```
-
-### 3. Search for rarity weight string
+Use the built-in analyze mode to search for all anchor patterns, rarity weights, and shiny thresholds:
 
 ```bash
-python3 -c "
-data = open('$(readlink ~/.local/bin/claude)', 'rb').read()
-# Try original weights
-original = b'common:60,uncommon:25,rare:10,epic:4,legendary:1'
-idx = data.find(original)
-if idx >= 0:
-    print(f'  [+] Original rarity weights found at 0x{idx:x}')
-else:
-    # Try patched variants
-    import re
-    pattern = rb'common:\d{2},uncommon:\d{2},rare:\d{2},epic:\d,legendary:\d'
-    match = re.search(pattern, data)
-    if match:
-        print(f'  [+] Rarity weights (patched) found at 0x{match.start():x}: {match.group().decode()}')
-    else:
-        print('  [!] Rarity weights NOT FOUND')
-"
+"${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" --analyze
 ```
 
-### 4. Search for shiny threshold
+This outputs:
+- Species anchor location and array content (or candidate variable refs if not found)
+- Rarity weight string location (original or patched variant)
+- Shiny threshold location
 
-```bash
-python3 -c "
-data = open('$(readlink ~/.local/bin/claude)', 'rb').read()
-for pattern in [b'H()<0.01', b'H()<1.01']:
-    idx = data.find(pattern)
-    if idx >= 0:
-        print(f'  [+] Shiny threshold found at 0x{idx:x}: {pattern.decode()}')
-        break
-else:
-    print('  [!] Shiny threshold NOT FOUND')
-"
-```
-
-### 5. Report and recommend
+### 3. Report and recommend
 
 Display a summary of what was found:
 
@@ -111,14 +53,14 @@ If all patterns match, report that the script is compatible and no changes neede
 
 If patterns are missing, analyze the differences:
 
-1. Read the current `SPECIES_VAR_MAP` from `${CLAUDE_PLUGIN_ROOT}/scripts/patch-buddy.py`
+1. Read the current `knownVarMaps` from `${CLAUDE_PLUGIN_ROOT}/scripts/BuddyPatcher/Sources/BuddyPatcher/VariableMapDetection.swift`
 2. Compare against what was found in the binary
 3. Suggest specific code changes:
-   - New variable names for `SPECIES_VAR_MAP`
-   - Updated `TRQ_ANCHOR` pattern
+   - New variable names for `knownVarMaps`
+   - Updated anchor patterns
    - Any changes to rarity or shiny patterns
-4. Offer to apply the updates to the script
+4. Offer to apply the updates to the Swift source
 
-### 6. Update the reference doc
+### 4. Update the reference doc
 
-If changes were needed and applied, also update `${CLAUDE_PLUGIN_ROOT}/skills/buddy/references/species-map.md` with the new variable mappings and binary version.
+If changes were needed and applied, also update `${CLAUDE_PLUGIN_ROOT}/skills/buddy-evolve/references/species-map.md` with the new variable mappings and binary version.
