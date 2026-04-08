@@ -88,7 +88,7 @@ Pick the species. Choose the rarity. Name it. Define its personality. Max out it
 Before installing, make sure you have:
 
 - 🍎 **macOS** — required (uses `codesign` for binary re-signing)
-- 🐍 **Python 3** — ships with macOS; verify with `python3 --version`
+- 🛠️ **Xcode Command Line Tools** — provides Swift compiler and codesign; install with `xcode-select --install`
 - 🤖 **Claude Code** — CLI version with the Buddy feature
 
 ---
@@ -361,7 +361,7 @@ If you skip the reset, your customized buddy remains until the next Claude Code 
 
 Issues and PRs welcome at [github.com/Soul-Craft/buddy-evolver](https://github.com/Soul-Craft/buddy-evolver).
 
-If you modify `scripts/patch-buddy.py`, every binary patch **must** produce output identical in byte length to the original — like fitting new sprites into the same ROM. Test with `--dry-run` before committing.
+If you modify the Swift source in `scripts/BuddyPatcher/`, every binary patch **must** produce output identical in byte length to the original — like fitting new sprites into the same ROM. Test with `--dry-run` before committing.
 
 ---
 

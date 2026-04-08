@@ -26,7 +26,7 @@ If the binary is not found, tell the user Claude Code doesn't appear to be insta
 Run the patching script with every patch type enabled to test all anchor patterns:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/patch-buddy.py" \
+"${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" \
   --dry-run \
   --species dragon \
   --rarity legendary \
