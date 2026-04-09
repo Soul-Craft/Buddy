@@ -19,6 +19,10 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || echo .)}/scripts/cache-clean.sh\" 2>/dev/null; exit 0"
+          },
+          {
+            "type": "command",
+            "command": "echo '\\n💡 Session ending — run /token-review to audit plugin token footprint.'"
           }
         ]
       }
