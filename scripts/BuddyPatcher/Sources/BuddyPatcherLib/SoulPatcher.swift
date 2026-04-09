@@ -1,21 +1,23 @@
 import Foundation
 
-private let claudeJSON = FileManager.default.homeDirectoryForCurrentUser
+private let defaultClaudeJSON = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent(".claude.json")
 
-/// Update the companion soul in ~/.claude.json.
-func patchSoul(name: String?, personality: String?) -> Bool {
+/// Update the companion soul in ~/.claude.json (or a custom path for testing).
+@discardableResult
+public func patchSoul(name: String?, personality: String?, configPath: URL? = nil) -> Bool {
     guard name != nil || personality != nil else { return true }
 
+    let target = configPath ?? defaultClaudeJSON
     let fm = FileManager.default
-    guard fm.fileExists(atPath: claudeJSON.path) else {
-        print("  [!] WARNING: ~/.claude.json not found — skipping soul patch")
+    guard fm.fileExists(atPath: target.path) else {
+        print("  [!] WARNING: \(target.path) not found — skipping soul patch")
         return false
     }
 
-    guard let jsonData = fm.contents(atPath: claudeJSON.path),
+    guard let jsonData = fm.contents(atPath: target.path),
           var config = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
-        print("  [!] WARNING: ~/.claude.json is not valid JSON — skipping soul patch")
+        print("  [!] WARNING: \(target.path) is not valid JSON — skipping soul patch")
         return false
     }
 
@@ -32,7 +34,7 @@ func patchSoul(name: String?, personality: String?) -> Bool {
         withJSONObject: config,
         options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
     ) else {
-        print("  [!] WARNING: Failed to serialize ~/.claude.json")
+        print("  [!] WARNING: Failed to serialize config")
         return false
     }
 
@@ -40,9 +42,9 @@ func patchSoul(name: String?, personality: String?) -> Bool {
     var output = outputData
     output.append(0x0A) // \n
     do {
-        try output.write(to: claudeJSON)
+        try output.write(to: target, options: .atomic)
     } catch {
-        print("  [!] WARNING: Failed to write ~/.claude.json: \(error)")
+        print("  [!] WARNING: Failed to write \(target.path): \(error)")
         return false
     }
 

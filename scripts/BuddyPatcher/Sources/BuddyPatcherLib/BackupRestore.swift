@@ -1,19 +1,40 @@
 import Foundation
+import CryptoKit
 
 private let fm = FileManager.default
 private let claudeJSON = fm.homeDirectoryForCurrentUser.appendingPathComponent(".claude.json")
 private let backupDir = fm.homeDirectoryForCurrentUser
     .appendingPathComponent(".claude/backups")
 
+/// Compute SHA-256 hex digest of a file.
+public func sha256Hex(_ url: URL) -> String? {
+    guard let data = try? Data(contentsOf: url) else { return nil }
+    let hash = SHA256.hash(data: data)
+    return hash.map { String(format: "%02x", $0) }.joined()
+}
+
+private let hashFile = backupDir.appendingPathComponent("binary-sha256.txt")
+
 /// Create backups if they don't exist (idempotent).
-func ensureBackup(_ binaryPath: URL) {
+public func ensureBackup(_ binaryPath: URL) {
     let backup = binaryPath.deletingLastPathComponent()
         .appendingPathComponent("\(binaryPath.lastPathComponent).original-backup")
+
+    try? fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
+    try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: backupDir.path)
 
     if !fm.fileExists(atPath: backup.path) {
         do {
             try fm.copyItem(at: binaryPath, to: backup)
+            try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: backup.path)
             print("  [+] Binary backed up to \(backup.path)")
+
+            // Store SHA-256 of original binary
+            if let hash = sha256Hex(binaryPath) {
+                try? hash.write(to: hashFile, atomically: true, encoding: .utf8)
+                try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: hashFile.path)
+                print("  [+] Binary SHA-256: \(hash.prefix(16))...")
+            }
         } catch {
             print("  [!] WARNING: Failed to backup binary: \(error)")
         }
@@ -21,11 +42,11 @@ func ensureBackup(_ binaryPath: URL) {
         print("  [=] Binary backup already exists at \(backup.path)")
     }
 
-    try? fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
     let soulBackup = backupDir.appendingPathComponent(".claude.json.pre-customize")
     if !fm.fileExists(atPath: soulBackup.path) && fm.fileExists(atPath: claudeJSON.path) {
         do {
             try fm.copyItem(at: claudeJSON, to: soulBackup)
+            try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: soulBackup.path)
             print("  [+] Soul backed up to \(soulBackup.path)")
         } catch {
             print("  [!] WARNING: Failed to backup soul: \(error)")
@@ -34,7 +55,7 @@ func ensureBackup(_ binaryPath: URL) {
 }
 
 /// Run patched binary with --version to verify it's not corrupted.
-func verifyBinary(_ binaryPath: URL) -> Bool {
+public func verifyBinary(_ binaryPath: URL) -> Bool {
     let process = Process()
     process.executableURL = binaryPath
     process.arguments = ["--version"]
@@ -60,7 +81,7 @@ func verifyBinary(_ binaryPath: URL) -> Bool {
 }
 
 /// Restore binary and soul from backups.
-func restoreBackup(_ binaryPath: URL) -> Bool {
+public func restoreBackup(_ binaryPath: URL) -> Bool {
     let backup = binaryPath.deletingLastPathComponent()
         .appendingPathComponent("\(binaryPath.lastPathComponent).original-backup")
 
@@ -69,9 +90,25 @@ func restoreBackup(_ binaryPath: URL) -> Bool {
         return false
     }
 
+    // Verify backup integrity if hash file exists
+    if fm.fileExists(atPath: hashFile.path),
+       let storedHash = try? String(contentsOf: hashFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+       let backupHash = sha256Hex(backup) {
+        if storedHash != backupHash {
+            print("  [!] ERROR: Backup integrity check failed!")
+            print("  [!]   Expected: \(storedHash.prefix(16))...")
+            print("  [!]   Got:      \(backupHash.prefix(16))...")
+            print("  [!] Backup may be corrupted. Refusing to restore.")
+            return false
+        }
+        print("  [+] Backup integrity verified (SHA-256 match)")
+    } else if !fm.fileExists(atPath: hashFile.path) {
+        print("  [~] No hash file found — skipping integrity check (pre-security backup)")
+    }
+
     do {
-        try? fm.removeItem(at: binaryPath)
-        try fm.copyItem(at: backup, to: binaryPath)
+        let backupData = try Data(contentsOf: backup)
+        try backupData.write(to: binaryPath, options: .atomic)
         print("  [+] Binary restored from \(backup.path)")
     } catch {
         print("  [!] ERROR: Failed to restore binary: \(error)")
@@ -81,22 +118,25 @@ func restoreBackup(_ binaryPath: URL) -> Bool {
     let soulBackup = backupDir.appendingPathComponent(".claude.json.pre-customize")
     if fm.fileExists(atPath: soulBackup.path) {
         do {
-            try? fm.removeItem(at: claudeJSON)
-            try fm.copyItem(at: soulBackup, to: claudeJSON)
+            let soulData = try Data(contentsOf: soulBackup)
+            try soulData.write(to: claudeJSON, options: .atomic)
             print("  [+] Soul restored from \(soulBackup.path)")
         } catch {
             print("  [!] WARNING: Failed to restore soul: \(error)")
         }
     }
 
-    resignBinary(binaryPath)
+    if !resignBinary(binaryPath) {
+        print("  [!] WARNING: Re-signing restored binary failed. Run manually:")
+        print("      codesign --force --sign - \(binaryPath.path)")
+    }
     print("\n  Buddy restored to original! Restart Claude Code to see your OG buddy.")
     return true
 }
 
 /// Re-sign the binary with an ad-hoc codesign.
 @discardableResult
-func resignBinary(_ binaryPath: URL) -> Bool {
+public func resignBinary(_ binaryPath: URL) -> Bool {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
     process.arguments = ["--force", "--sign", "-", binaryPath.path]

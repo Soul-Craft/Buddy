@@ -2,7 +2,7 @@ import Foundation
 
 /// Known species variable maps. Newest first so detection prefers the latest match.
 /// The first 4 species (duck, goose, blob, cat) form the anchor pattern.
-let knownVarMaps: [[String: String]] = [
+public let knownVarMaps: [[String: String]] = [
     [   // v2.1.90+
         "duck": "GL_",    "goose": "ZL_",   "blob": "LL_",    "cat": "kL_",
         "dragon": "vL_",  "octopus": "hL_", "owl": "yL_",     "penguin": "NL_",
@@ -20,23 +20,23 @@ let knownVarMaps: [[String: String]] = [
 ]
 
 /// All species names (same across all maps).
-let allSpecies: [String] = [
+public let allSpecies: [String] = [
     "duck", "goose", "blob", "cat", "dragon", "octopus", "owl", "penguin",
     "turtle", "snail", "axolotl", "ghost", "robot", "mushroom", "cactus",
     "rabbit", "chonk", "capybara",
 ]
 
-let validRarities = ["common", "uncommon", "rare", "epic", "legendary"]
-let statNames = ["debugging", "patience", "chaos", "wisdom", "snark"]
+public let validRarities = ["common", "uncommon", "rare", "epic", "legendary"]
+public let statNames = ["debugging", "patience", "chaos", "wisdom", "snark"]
 
 /// Build the anchor pattern (first 4 species refs) for a given var map.
-func anchorForMap(_ varMap: [String: String]) -> [UInt8] {
+public func anchorForMap(_ varMap: [String: String]) -> [UInt8] {
     let s = "\(varMap["duck"]!),\(varMap["goose"]!),\(varMap["blob"]!),\(varMap["cat"]!),"
     return utf8Bytes(s)
 }
 
 /// Try each known var map and return the first whose anchor is found in data.
-func detectVarMap(in data: [UInt8]) -> (varMap: [String: String], anchor: [UInt8])? {
+public func detectVarMap(in data: [UInt8]) -> (varMap: [String: String], anchor: [UInt8])? {
     for varMap in knownVarMaps {
         let anchor = anchorForMap(varMap)
         if findFirst(in: data, pattern: anchor) != nil {

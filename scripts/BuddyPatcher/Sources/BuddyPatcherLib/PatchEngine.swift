@@ -1,7 +1,7 @@
 import Foundation
 
 /// Replace ALL species variable refs in Trq arrays with the target species.
-func patchSpecies(_ data: inout [UInt8], target: String, anchor: [UInt8], varMap: [String: String]) -> Int {
+public func patchSpecies(_ data: inout [UInt8], target: String, anchor: [UInt8], varMap: [String: String]) -> Int {
     guard let targetVar = varMap[target] else {
         print("  [!] WARNING: Unknown species '\(target)'")
         return 0
@@ -68,7 +68,7 @@ func patchSpecies(_ data: inout [UInt8], target: String, anchor: [UInt8], varMap
 }
 
 /// Zero all rarity weights except the target.
-func patchRarity(_ data: inout [UInt8], target: String) -> Int {
+public func patchRarity(_ data: inout [UInt8], target: String) -> Int {
     let rarityWeights: [(String, String)] = [
         ("common", "60"), ("uncommon", "25"), ("rare", "10"), ("epic", "4"), ("legendary", "1")
     ]
@@ -128,7 +128,7 @@ func patchRarity(_ data: inout [UInt8], target: String) -> Int {
 }
 
 /// Set shiny to always-true or restore original probability.
-func patchShiny(_ data: inout [UInt8], makeShiny: Bool) -> Int {
+public func patchShiny(_ data: inout [UInt8], makeShiny: Bool) -> Int {
     let old: [UInt8]
     let new: [UInt8]
 
@@ -163,7 +163,7 @@ func patchShiny(_ data: inout [UInt8], makeShiny: Bool) -> Int {
 }
 
 /// Replace the target species' ASCII art with a centered emoji.
-func patchArt(_ data: inout [UInt8], target: String, emoji: String, varMap: [String: String]) -> Int {
+public func patchArt(_ data: inout [UInt8], target: String, emoji: String, varMap: [String: String]) -> Int {
     guard let targetVar = varMap[target] else {
         print("  [!] WARNING: Unknown species '\(target)'")
         return 0
