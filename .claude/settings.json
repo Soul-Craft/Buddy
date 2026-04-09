@@ -1,20 +1,30 @@
 {
   "permissions": {
     "allow": [
-      "Bash(*run-buddy-patcher*)",
-      "Bash(swift build*)",
+      "Bash(python3 *patch-buddy.py*)",
       "Bash(*readlink ~/.local/bin/claude*)",
-      "Bash(*plutil*claude.json*)"
+      "Bash(*import json*claude.json*)"
     ]
   },
   "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || echo .)}/scripts/cache-clean.sh\" 2>/dev/null; exit 0"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -q 'BuddyPatcher'; then echo '⚠️ BYTE-LENGTH INVARIANT: Every binary patch MUST produce output identical in byte length to the original. Verify all assert checks and test with --dry-run before committing.'; fi"
+            "command": "if echo \"$TOOL_INPUT\" | grep -q 'patch-buddy.py'; then echo '⚠️ BYTE-LENGTH INVARIANT: Every binary patch MUST produce output identical in byte length to the original. Verify all assert len() checks and test with --dry-run before committing.'; fi"
           }
         ]
       }
