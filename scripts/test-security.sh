@@ -62,8 +62,8 @@ echo
 run_test "Reject multi-char emoji" 1 "$BIN" --species duck --emoji "AB" --dry-run
 run_test "Reject ASCII letter as emoji" 1 "$BIN" --species duck --emoji "X" --dry-run
 run_test "Reject long string as emoji" 1 "$BIN" --species duck --emoji "hello world" --dry-run
-run_test "Accept valid single emoji" 0 "$BIN" --species duck --emoji "🔥" --dry-run
-run_test "Accept complex emoji (flag)" 0 "$BIN" --species duck --emoji "🇺🇸" --dry-run
+run_test "Accept valid single emoji" 0 "$BIN" --species duck --emoji "🔥" --binary /bin/sh --dry-run
+run_test "Accept complex emoji (flag)" 0 "$BIN" --species duck --emoji "🇺🇸" --binary /bin/sh --dry-run
 
 echo
 
@@ -71,7 +71,7 @@ echo
 run_test "Reject empty name" 1 "$BIN" --name "" --dry-run
 LONG_NAME=$(python3 -c "print('A' * 200)")
 run_test "Reject name over 100 chars" 1 "$BIN" --name "$LONG_NAME" --dry-run
-run_test "Accept valid name" 0 "$BIN" --name "Flamey" --dry-run
+run_test "Accept valid name" 0 "$BIN" --name "Flamey" --binary /bin/sh --dry-run
 
 echo
 
@@ -79,7 +79,7 @@ echo
 run_test "Reject empty personality" 1 "$BIN" --personality "" --dry-run
 LONG_PERS=$(python3 -c "print('B' * 600)")
 run_test "Reject personality over 500 chars" 1 "$BIN" --personality "$LONG_PERS" --dry-run
-run_test "Accept valid personality" 0 "$BIN" --personality "A fiery friend who loves warmth" --dry-run
+run_test "Accept valid personality" 0 "$BIN" --personality "A fiery friend who loves warmth" --binary /bin/sh --dry-run
 
 echo
 
@@ -88,7 +88,7 @@ run_test "Reject unknown stat key" 1 "$BIN" --stats '{"hacking":99}' --dry-run
 run_test "Reject stat value over 100" 1 "$BIN" --stats '{"debugging":999}' --dry-run
 run_test "Reject stat negative value" 1 "$BIN" --stats '{"chaos":-5}' --dry-run
 run_test "Reject invalid JSON" 1 "$BIN" --stats 'not json' --dry-run
-run_test "Accept valid stats" 0 "$BIN" --stats '{"debugging":80,"chaos":50}' --dry-run
+run_test "Accept valid stats" 0 "$BIN" --stats '{"debugging":80,"chaos":50}' --binary /bin/sh --dry-run
 
 echo
 
@@ -99,7 +99,7 @@ run_test "Reject non-Mach-O file" 1 "$BIN" --binary /etc/hosts --analyze
 echo
 
 # Combined valid run
-run_test "Full valid dry-run" 0 "$BIN" --species dragon --rarity legendary --shiny --emoji "🐲" --name "Drake" --personality "Fierce and loyal" --stats '{"debugging":99,"chaos":75}' --dry-run
+run_test "Full valid dry-run" 0 "$BIN" --species dragon --rarity legendary --shiny --emoji "🐲" --name "Drake" --personality "Fierce and loyal" --stats '{"debugging":99,"chaos":75}' --binary /bin/sh --dry-run
 
 echo
 
