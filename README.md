@@ -101,6 +101,11 @@ Run these commands **inside Claude Code** (not your regular terminal):
 
 ```
 /plugin marketplace add Soul-Craft/buddy-evolver
+```
+
+Then
+
+```
 /plugin install buddy-evolver@soul-craft
 ```
 
