@@ -204,12 +204,12 @@ After the script succeeds, display the evolved buddy:
 
 Then tell the user:
 ```
-⚠️  Restart Claude Code to see your evolved buddy:
+Buddy evolved and binary re-signed. Restart Claude Code to load the new buddy:
    exit
    claude
-   Then run /buddy
 
-To revert anytime: /buddy-reset
+Once restarted, run /buddy-status to see your new buddy card.
+To revert at any time, run /buddy-reset.
 ```
 
 ## Error Handling
