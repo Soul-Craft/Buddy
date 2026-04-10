@@ -1,5 +1,5 @@
 {
-  "description": "Session context, security validation, pre-commit test reminders, and doc freshness checks for buddy-evolver",
+  "description": "Session context, security validation, pre-commit test reminders, doc freshness checks, and worktree self-cleanup for buddy-evolver",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,17 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\"",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh\"",
+            "timeout": 5
           }
         ]
       }

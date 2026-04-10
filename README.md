@@ -395,10 +395,12 @@ Everything below is for contributors and developers working on the plugin itself
 .github/workflows/ci.yml          CI: build + test + security checks (macOS 14)
 agents/
   security-reviewer.md            Security review agent for Swift changes
+  comment-reviewer.md             Inline comment audit agent for /end-session (Haiku)
   test-runner.md                  Test execution agent
 hooks/
-  hooks.json                      Hook definitions (SessionStart + PreToolUse)
-  session-start.sh                Dev context injection at session startup
+  hooks.json                      Hook definitions (SessionStart + SessionEnd + PreToolUse)
+  session-start.sh                Dynamic dev context injection at session startup
+  session-end.sh                  Automatic worktree self-cleanup on exit
   validate-patcher-args.sh        Shell injection prevention for patcher args
   check-doc-freshness.sh          Pre-commit doc sync reminder
   pre-commit-test-reminder.sh     Context-aware test reminders on git commit
@@ -411,6 +413,7 @@ scripts/
     Tests/Fixtures/               Golden files for CLI snapshot tests
   run-buddy-patcher.sh            Lazy-build wrapper (compiles on first use)
   cache-clean.sh                  Cache cleanup utility
+  process-pending-cleanup.sh      Shared worktree cleanup retry (session-end + session-start hooks)
   lint.sh                         Local lint (shellcheck, JSON, frontmatter, hygiene)
   test-smoke.sh                   Smoke tier: build sanity + CLI contract (<30s)
   test-security.sh                Security validation test suite
@@ -419,7 +422,7 @@ scripts/
   test-compatibility.sh           knownVarMaps validation (on-demand)
   test-perf.sh                    Performance benchmarks (on-demand)
   coverage.sh                     Local HTML coverage report
-skills/                           13 slash commands (see tables below)
+skills/                           15 slash commands (see tables below)
 ```
 
 </details>
@@ -442,10 +445,10 @@ skills/                           13 slash commands (see tables below)
 
 ### Plugin automation
 
-The plugin ships 12 skills, 5 agents, and 5 hooks:
+The plugin ships 15 skills, 6 agents, and 6 hooks:
 
 <details>
-<summary>📜 Skills (12 slash commands)</summary>
+<summary>📜 Skills (15 slash commands)</summary>
 
 **User-facing:**
 
@@ -468,17 +471,19 @@ The plugin ships 12 skills, 5 agents, and 5 hooks:
 | `/cache-clean` | Interactive cache management with dry-run preview |
 | `/token-review` | 5-phase context footprint audit with optimization recommendations |
 | `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
-| `/start-session` | Refresh dev context (git state, binary version, compatibility) |
-| `/end-session` | Automated wrap-up: runs tests, security review, token review, cache cleanup |
+| `/start-session` | Refresh dev context (delegates to SessionStart hook — no hardcoded list to drift) |
+| `/end-session` | Pre-commit wrap-up: token review → test-all (328 tests) → upload Check Run → sync docs → comment audit |
+| `/session-deploy` | Post-merge: sync local main, verify smoke, clean other worktrees, stage self-cleanup for `/exit` |
 
 </details>
 
 <details>
-<summary>🤖 Agents (5 subagents)</summary>
+<summary>🤖 Agents (6 subagents)</summary>
 
 | Agent | Purpose |
 |-------|---------|
 | `security-reviewer` | Reviews Swift code for validation gaps, byte-length violations, unsafe patterns |
+| `comment-reviewer` | Haiku read-only audit of inline comments in changed files — used by `/end-session` |
 | `test-runner` | Builds and runs Swift tests, parses per-suite results |
 | `cache-analyzer` | Scans build artifacts, orphaned worktrees, backup sizes, disk usage |
 | `docs-reviewer` | Detects documentation gaps, stale entries, and path mismatches |
@@ -487,11 +492,12 @@ The plugin ships 12 skills, 5 agents, and 5 hooks:
 </details>
 
 <details>
-<summary>🔗 Hooks (5 automation hooks)</summary>
+<summary>🔗 Hooks (6 automation hooks)</summary>
 
 | Hook | Trigger | Purpose |
 |------|---------|---------|
-| Session context | `SessionStart` | Injects git state, binary version, compatibility status, backup health |
+| Session context | `SessionStart` | Dynamic discovery of skills/agents/hooks + git freshness + pending cleanup retry |
+| Worktree cleanup | `SessionEnd` | Attempts to remove staged worktree from `/session-deploy` on exit |
 | Argument validation | `PreToolUse` (Bash) | Validates patcher args for shell metacharacters, injection, length limits |
 | Test reminder | `PreToolUse` (Bash) | Reminds to run `swift test` before `git commit` on Swift changes |
 | Doc freshness | `PreToolUse` (Bash) | Warns if code changed but CLAUDE.md/README.md weren't updated |
@@ -588,7 +594,7 @@ Run `make help` to see all available targets.
 | `ValidationTests` | Input validation (emoji, name, personality, stats, binary) |
 | `VariableMapDetectionTests` | Anchor detection, version compatibility |
 
-**326 automated tests** across 9 tiers: smoke (13) + unit (178) + security (27) + integration (23) + functional (19) + UI (23) + e2e (23) + snapshots (6) + docs (14). Plus 34 on-demand tests (27 compat + 7 perf). See [`CLAUDE.md`](CLAUDE.md) for the full testing architecture.
+**328 automated tests** across 9 tiers: smoke (13) + unit (178) + security (27) + integration (23) + functional (19) + UI (23) + e2e (23) + snapshots (6) + docs (16). Plus 34 on-demand tests (27 compat + 7 perf). See [`CLAUDE.md`](CLAUDE.md) for the full testing architecture.
 
 **CI** is local-first: `ci-quality.yml` runs on Ubuntu for every PR (shellcheck, JSON/YAML validation, hygiene checks). macOS-dependent tests run on contributor machines via `scripts/test-all.sh && scripts/upload-test-results.sh`; `ci-verify-local.yml` blocks merge until the upload appears and passes.
 

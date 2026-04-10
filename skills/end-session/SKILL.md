@@ -1,140 +1,197 @@
 ---
 name: end-session
-description: Use when ending a dev session on Buddy Evolver. Use when the user says "end session", "wrap up", "done for now", "finish up", "session done", or "close out".
+description: Use when wrapping up a dev session on Buddy Evolver before committing via the Desktop App. Runs the full test-all.sh pipeline, uploads results as a GitHub Check Run, applies token optimizations, syncs docs, and audits comments. Use when the user says "end session", "wrap up", "done for now", "finish up", "session done", "close out", or "ready to commit".
 ---
 
-# End Session — Automated Dev Wrap-Up
+# End Session — Pre-Commit Wrap-Up
 
-Detect what changed during the session and automatically run the appropriate checks. No manual steps — just run everything and report.
+Runs the **full prepare-for-merge pipeline** in order so that when the user clicks the Desktop App's "Commit Changes" button, the code is optimized, documented, tested, and CI-verified.
 
-## Step 1: Detect what changed
+This skill is linear — no conditional branches. Every step runs every time. The only decision the user makes at the end is "commit or fix."
 
-```bash
-echo "=== Unstaged Changes ==="
-git diff --name-only 2>/dev/null
-echo "=== Staged Changes ==="
-git diff --cached --name-only 2>/dev/null
-echo "=== Untracked Files ==="
-git ls-files --others --exclude-standard 2>/dev/null
-```
+## Running order
 
-Categorize all changed files into these groups (a file can match multiple):
-- **swift_changed**: any path matching `scripts/BuddyPatcher/Sources/**` or `scripts/BuddyPatcher/Tests/**`
-- **skills_changed**: any path matching `skills/**`
-- **hooks_changed**: any path matching `hooks/**`
-- **config_changed**: any path matching `.claude/settings.json`, `CLAUDE.md`, `.claude-plugin/**`
-- **agents_changed**: any path matching `agents/**` or `.claude-plugin/agents/**`
+1. **Token review (--apply --force)** — apply token optimizations to skills/configs
+2. **Full test pipeline** — `scripts/test-all.sh` (all 328 tests, 9 tiers)
+3. **Upload results as GitHub Check Run** — `scripts/upload-test-results.sh`
+4. **Sync docs** — fix drift in CLAUDE.md and README.md
+5. **Comment review** — Haiku agent audits inline comments in changed files
+6. **Summary report** — unified table with all results and next-step guidance
 
-Note which groups have changes — these determine which checks run below.
+Token review runs BEFORE tests so the test pipeline validates the optimized code. Comment review runs AFTER tests so only code that already passes tests is audited.
 
-## Step 2: Run checks (automatic, based on changes)
-
-Run ALL applicable checks. Do not ask the user — just run them.
-
-### 2a. Swift tests (if swift_changed)
-
-Run the full test suite:
-
-```bash
-cd "${CLAUDE_PLUGIN_ROOT}/scripts/BuddyPatcher" && swift test 2>&1
-```
-
-Parse the output for pass/fail counts and time elapsed. Note any failures with test names and assertion messages.
-
-### 2b. Security review (if swift_changed)
-
-Invoke the `security-reviewer` agent on the changed Swift files. Provide it with the specific files that changed and ask it to check for:
-- Missing input validation
-- Byte-length invariant violations
-- Non-atomic writes
-- Unsafe process execution
-
-### 2c. Token review (if skills_changed OR config_changed OR agents_changed)
-
-Run a quick token inventory (Phase 1 only — no full audit):
+## Step 1: Detect changes
 
 ```bash
 cd "${CLAUDE_PLUGIN_ROOT}"
-echo "=== Always Loaded ==="
-for f in CLAUDE.md .claude-plugin/plugin.json .claude-plugin/marketplace.json .claude/settings.json; do
-  if [ -f "$f" ]; then
-    chars=$(wc -c < "$f" | tr -d ' ')
-    tokens=$((chars / 4))
-    printf "  %-45s ~%s tokens\n" "$f" "$tokens"
-  fi
-done
-echo "=== Modified Skills ==="
-for f in skills/*/SKILL.md; do
-  if [ -f "$f" ]; then
-    chars=$(wc -c < "$f" | tr -d ' ')
-    tokens=$((chars / 4))
-    printf "  %-45s ~%s tokens\n" "$f" "$tokens"
-  fi
-done
+echo "=== Unstaged ==="
+git diff --name-only 2>/dev/null
+echo "=== Staged ==="
+git diff --cached --name-only 2>/dev/null
+echo "=== Untracked ==="
+git ls-files --others --exclude-standard 2>/dev/null
 ```
 
-Flag any single file over ~1500 tokens or if always-loaded total exceeds ~3000 tokens. Suggest `/token-review --apply` if there are optimization opportunities.
+Bucket the changed paths into these categories for the final summary:
 
-### 2d. Compatibility check (if swift_changed AND patcher is compiled)
+- **swift**: `scripts/BuddyPatcher/Sources/**`, `scripts/BuddyPatcher/Tests/**`
+- **skills**: `skills/**`
+- **hooks**: `hooks/**`
+- **config**: `.claude/settings.json`, `.claude-plugin/**`
+- **agents**: `agents/**`, `.claude-plugin/agents/**`
+- **docs**: `CLAUDE.md`, `README.md`, `docs/**`
+- **scripts**: `scripts/**` (excluding BuddyPatcher)
+
+Capture a file list for the comment-review step later.
+
+## Step 2: Token review with auto-apply
+
+Run the token review skill with both `--apply` (execute the edits) and `--force` (bypass the dirty-worktree check — end-session always runs against a dirty worktree by design).
 
 ```bash
-PATCHER="${CLAUDE_PLUGIN_ROOT}/scripts/BuddyPatcher/.build/release/buddy-patcher"
-if [ -f "$PATCHER" ]; then
-  "${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" \
-    --dry-run --species dragon --rarity legendary --shiny \
-    --emoji "🐲" --name "Test" --personality "Test" 2>&1
-fi
+# Invoke /token-review --apply --force
+# The skill will:
+#  - Inventory context-loaded files
+#  - Identify optimization opportunities
+#  - Apply them (extracting long sections to reference/ files)
+#  - Report the before/after token savings
 ```
 
-Check for `[DRY RUN]` (good) and `[!] WARNING` (bad) lines.
+Capture the reported savings (tokens freed, files modified). If the skill reports no savings, note "already optimized". If it reports failures mid-apply, note the failure and continue — the rest of the pipeline still needs to run.
 
-### 2e. Cache cleanup (always)
+## Step 3: Full test pipeline
+
+Run all 9 tiers unconditionally. This is the same pipeline GitHub CI requires for merge.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/cache-clean.sh" --verbose
+cd "${CLAUDE_PLUGIN_ROOT}" && bash scripts/test-all.sh 2>&1
 ```
 
-## Step 3: Report results
+`test-all.sh` writes three artifacts:
+- `test-results/results.json` — per-tier pass/fail + duration (used by upload)
+- `test-results/junit.xml` — JUnit-format report
+- `test-results/full-output.log` — captured stdout/stderr
 
-Present a single summary table with all results:
+Parse `test-results/results.json` for the summary table. Expected: 328/328 passed in ~40s.
+
+If any tier fails, continue the pipeline but mark the session as `FAIL` in the final summary and list the failing tier(s).
+
+## Step 4: Upload results to GitHub
+
+After `test-all.sh`, upload results so `ci-verify-local.yml` can see them:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/upload-test-results.sh" 2>&1
+```
+
+Handle three outcomes:
+- **Success**: upload created a Check Run — capture the URL for the summary
+- **No PR yet**: script reports "no PR for branch" — note "upload deferred, will happen after `git push`" in summary
+- **Tests failed in Step 3**: skip upload; flag in summary as "skipped (tests failed)"
+
+## Step 5: Sync docs
+
+Invoke `/sync-docs` to detect and fix drift in CLAUDE.md and README.md. The skill uses the `docs-reviewer` agent internally.
+
+Capture:
+- `clean` (no drift detected) — report "✅ clean"
+- `N edits applied` — report counts per file
+- `drift detected, edits declined` — report the drift list for manual review
+
+## Step 6: Comment review (Haiku agent)
+
+Dispatch the `comment-reviewer` agent (defined at `agents/comment-reviewer.md`, model: haiku) to audit inline comments in the files changed during this session.
+
+Provide the agent with:
+- The list of changed files from Step 1 (filtered to Swift and shell sources — the agent's scope)
+- Explicit instruction: "Read-only review. Report findings; do not apply edits."
+
+The agent returns a structured report with these sections: `MISSING_COMMENT`, `TODO_MARKER`, `STALE_COMMENT`, `SECURITY_COMMENT`, `SHELLCHECK_UNJUSTIFIED`, `SUMMARY`.
+
+Surface the summary's status (`CLEAN` or `REVIEW_NEEDED`). If `REVIEW_NEEDED`, show the top 5 flagged items verbatim and mention that the full report is available.
+
+## Step 7: Unified summary report
+
+Print this report exactly:
 
 ```
 Session Wrap-Up Report
-══════════════════════
+══════════════════════════════════════════════════════════
 
 Changes detected:
-  Swift code:    [yes/no] ([N] files)
-  Skills:        [yes/no] ([N] files)
-  Hooks:         [yes/no] ([N] files)
-  Config:        [yes/no] ([N] files)
-  Agents:        [yes/no] ([N] files)
+  Swift:     N files   Skills:  N files   Hooks:   N files
+  Config:    N files   Agents:  N files   Docs:    N files
+  Scripts:   N files
 
-Checks run:
-  Tests:         [94 passed ✅ / N failed ❌ / skipped (no Swift changes)]
-  Security:      [clean ✅ / N findings ⚠️ / skipped]
-  Tokens:        [within budget ✅ / over budget ⚠️ / skipped]
-  Compatibility: [all match ✅ / warnings ⚠️ / skipped]
-  Cache cleanup: [N items freed / nothing to clean]
+Token review (--apply --force):
+  ✅ N optimizations applied (~X tokens saved)  [or] ✅ already optimized
+  ⚠  M failures during apply  [only if any]
+
+Full test suite (scripts/test-all.sh):
+  Tier           Passed      Duration
+  smoke          13/13       Xs
+  unit           178/178     Xs
+  security       27/27       Xs
+  integration    23/23       Xs
+  functional     19/19       Xs
+  ui             23/23       Xs
+  e2e            23/23       Xs
+  snapshots      6/6         Xs
+  docs           16/16       Xs
+  ───────────────────────────────────
+  TOTAL          328/328     ~40s    ✅
+
+CI upload (Local Tests (macOS) Check Run):
+  ✅ created: https://github.com/Soul-Craft/buddy-evolver/...
+  [or] ⚠ deferred (no PR yet — will upload after first push)
+  [or] ⏭  skipped (tests failed above)
+
+Doc sync:         ✅ clean  [or]  ✅ N edits applied across M files
+Comment review:   ✅ clean  [or]  ⚠ N flagged (see list below)
 
 Git status:
-  Uncommitted:   [N files — consider committing]
-  Branch:        [branch name]
+  Branch:         <branch>
+  Uncommitted:    N files
+  vs origin/main: N ahead, M behind
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Next: Use the Desktop App's "Commit Changes" button.
+CI will verify via ci-verify-local.yml using the Check Run above.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-If any check has warnings or failures, list the specific issues below the summary table.
+### If anything failed
 
-If there are uncommitted changes, remind the user they can commit with `/commit` or manually.
-
-## Step 4: Handle no changes
-
-If no files were changed during the session, still run cache cleanup and show a brief report:
+Below the summary box, list specific issues with file:line references:
 
 ```
-Session Wrap-Up Report
-══════════════════════
-
-No changes detected this session.
-
-Cache cleanup: [result]
-Branch: [branch] — clean
+Action items before commit:
+  1. [tier or check name] — [what failed]
+     File: path/to/file:line
+     Fix: [concrete next step]
+  ...
 ```
+
+If the test pipeline failed:
+- Point the user to `test-results/full-output.log` for full details
+- Suggest the specific tier-level script for faster iteration (e.g., `scripts/test-unit.sh` for unit failures)
+
+If comment-reviewer flagged items:
+- Note that the user can re-run the agent later if they address issues now
+- Re-running this skill will re-audit the current state
+
+### If everything passed
+
+Above the summary box, print a short success banner:
+
+```
+✅ Session ready to commit. All checks green.
+```
+
+## Notes for future maintenance
+
+- **Linear pipeline by design.** Resist the urge to add "only run if X changed" conditionals. The full test-all.sh run is cheap (~40s) and its completeness is the whole point of this skill.
+- **Token review runs first** so that test-all.sh validates the optimized code, not the pre-optimized code.
+- **Comment review is read-only.** If you need auto-fixes, that's a separate skill — don't add write tools to comment-reviewer.
+- **If you add a new tier to test-all.sh**, it will show up in the summary table automatically (the skill reads from `results.json`, which is the source of truth).
+- **If you add a new check to this pipeline**, add it as a new numbered step and a new row in the summary box. Don't bury checks inside existing steps.

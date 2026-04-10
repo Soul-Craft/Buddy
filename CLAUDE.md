@@ -9,12 +9,14 @@ Claude Code plugin that customizes the terminal Buddy pet by patching the Mach-O
 .claude-plugin/marketplace.json  Marketplace listing (for /plugin install)
 .claude-plugin/agents/           Subagents (cache-analyzer, token-review)
 .claude/settings.json            Hooks (byte-length reminder + permissions)
-hooks/hooks.json                 Plugin hooks (SessionStart + PreToolUse)
-hooks/session-start.sh           SessionStart hook: injects dev context
+hooks/hooks.json                 Plugin hooks (SessionStart + SessionEnd + PreToolUse)
+hooks/session-start.sh           SessionStart hook: dynamic dev context + pending cleanup retry
+hooks/session-end.sh             SessionEnd hook: automatic worktree self-cleanup on exit
 hooks/validate-patcher-args.sh   Security hook: validates patcher arguments
 hooks/check-doc-freshness.sh     Pre-commit doc freshness check
 hooks/pre-commit-test-reminder.sh Context-aware test reminders on git commit
 agents/security-reviewer.md      Security review agent for Swift code changes
+agents/comment-reviewer.md       Inline comment audit agent for /end-session (Haiku)
 agents/test-runner.md            Test execution agent for Swift suite
 skills/buddy-evolve/             Evolution skill (/buddy-evolve)
 skills/buddy-reset/              Reset skill (/buddy-reset)
@@ -28,13 +30,15 @@ skills/update-species-map/       Binary version maintenance (/update-species-map
 skills/cache-clean/              Cache management skill (/cache-clean)
 skills/token-review/             Token optimization audit (/token-review)
 skills/sync-docs/                Documentation sync (/sync-docs)
-skills/start-session/            Dev session context (/start-session)
-skills/end-session/              Dev session wrap-up (/end-session)
+skills/start-session/            Dev session context (/start-session) — delegates to hook
+skills/end-session/              Pre-commit wrap-up (/end-session) — full test pipeline
+skills/session-deploy/           Post-merge sync + worktree cleanup (/session-deploy)
 scripts/BuddyPatcher/            Binary patching engine (Swift, CryptoKit only)
 scripts/BuddyPatcher/Tests/      Unit test suite (178 tests across 12 files)
 scripts/BuddyPatcher/Tests/Fixtures/  Golden files for CLI snapshot tests
 scripts/run-buddy-patcher.sh     Lazy-build wrapper (compiles Swift on first use)
 scripts/cache-clean.sh           Cache cleanup script (used by hook + skill)
+scripts/process-pending-cleanup.sh  Shared worktree cleanup retry logic (session-end + session-start hooks)
 scripts/build-test-binary.sh     Compiles a synthetic Mach-O with embedded patch patterns
 scripts/lint.sh                  Local lint (shellcheck, JSON, frontmatter, hygiene)
 scripts/test-smoke.sh            Smoke tier: build sanity + CLI contract (<30s, 13 tests)
@@ -44,7 +48,7 @@ scripts/test-functional.sh       Byte-level patch correctness + Mach-O validity 
 scripts/test-ui.sh               Buddy card rendering against fixtures (23 tests)
 scripts/test-e2e.sh              E2E tier — real-binary reset→evolve→verify→reset flow (23 tests)
 scripts/test-snapshots.sh        Golden file comparison for CLI output (6 tests)
-scripts/test-docs.sh             Documentation path + link + count consistency (14 tests)
+scripts/test-docs.sh             Documentation path + link + count consistency (16 tests)
 scripts/test-compatibility.sh    Compatibility validation against knownVarMaps (~27 tests, on-demand)
 scripts/test-perf.sh             Performance benchmarks (7 benchmarks, on-demand)
 scripts/coverage.sh              Local HTML coverage report (test-results/coverage/)
@@ -130,7 +134,7 @@ All user-provided inputs are validated before any write operation:
 
 ## Testing
 
-326 automated tests in `test-all.sh` (9 tiers) + 34 on-demand tests, plus an interactive visual smoke test. The critical design decision: **macOS-dependent tests run locally on the contributor's machine, NOT in GitHub Actions.** GitHub runners only run cheap Ubuntu-based quality checks. This keeps CI costs bounded while still enforcing test passage on every PR.
+328 automated tests in `test-all.sh` (9 tiers) + 34 on-demand tests, plus an interactive visual smoke test. The critical design decision: **macOS-dependent tests run locally on the contributor's machine, NOT in GitHub Actions.** GitHub runners only run cheap Ubuntu-based quality checks. This keeps CI costs bounded while still enforcing test passage on every PR.
 
 ### The 9 automated tiers (run via `test-all.sh`)
 
@@ -144,7 +148,7 @@ All user-provided inputs are validated before any write operation:
 | UI | `scripts/test-ui.sh` | 23 | real-world | Buddy card rendering against pinned JSON fixtures |
 | E2E | `scripts/test-e2e.sh` | 23 | real-world | Real-binary reset→evolve→verify→reset flow + UI render assertions |
 | Snapshots | `scripts/test-snapshots.sh` | 6 | full-system | Golden file comparison for CLI output |
-| Docs | `scripts/test-docs.sh` | 14 | peripheral | Documentation path + link + count consistency |
+| Docs | `scripts/test-docs.sh` | 16 | peripheral | Documentation path + link + count consistency |
 
 ### On-demand suites (not in `test-all.sh`)
 
@@ -193,15 +197,52 @@ Four workflows in `.github/workflows/`:
 
 ### Hook: session-start context injection
 
-A `SessionStart` hook in `hooks/hooks.json` runs `hooks/session-start.sh` at the start of each Claude Code session. Gathers git state, binary version, compatibility status, backup health, and cache state. Outputs structured context that includes available dev skills, agents, active hooks, and critical constraints. Always exits 0 (never blocks session startup). Timeout: 10s.
+A `SessionStart` hook in `hooks/hooks.json` runs `hooks/session-start.sh` at the start of each Claude Code session. **Dynamic discovery**: parses frontmatter from every SKILL.md, agent markdown file, and hook definition to emit up-to-date lists with no hardcoded drift. Compares the current branch to `origin/main` via a cached `git fetch` (5-min TTL) and warns if >10 commits behind. Reports git state, binary version, compatibility status, backup health, cache state, and any pending worktree cleanups from a prior `/session-deploy`. Always exits 0 (never blocks session startup). Timeout: 10s. Output budget: ≤60 lines, typical runtime <2s.
+
+### Hook: session-end automatic cleanup
+
+A `SessionEnd` hook in `hooks/hooks.json` runs `hooks/session-end.sh` when a Claude Code session ends. Reads `~/.claude/buddy-evolver-cleanup-pending.json` (written by `/session-deploy`) and attempts to remove each staged worktree from the main repo. Delegates to `scripts/process-pending-cleanup.sh` (shared with the session-start retry path). Best-effort first attempt — if Claude Code hasn't released the worktree's CWD yet, the cleanup is retried on the next `SessionStart` in any future session. Always exits 0. Timeout: 5s.
 
 ### Skill: /start-session
 
-Manual re-trigger of session context. Same information as the SessionStart hook but invoked as a skill. Use to refresh context mid-session or when hook output has scrolled away.
+Manual re-trigger of the SessionStart hook. **Delegates to `hooks/session-start.sh`** so there is no parallel hardcoded list to drift. Use to refresh context mid-session or when hook output has scrolled away.
 
 ### Skill: /end-session
 
-Automated session wrap-up. Detects what changed during the session (Swift code, skills, hooks, configs, agents) and runs appropriate checks: tests if Swift changed, security review if Swift changed, token review if skills/configs changed, compatibility check if patch logic changed, and cache cleanup always. Reports a summary table of all results.
+Pre-commit wrap-up. Run BEFORE clicking the Desktop App's "Commit Changes" button. Unconditional linear pipeline:
+1. Token review with `--apply --force` — applies optimizations (so tests validate the optimized code)
+2. Full test pipeline via `scripts/test-all.sh` — all 328 tests across 9 tiers
+3. Upload results to GitHub as a Check Run via `scripts/upload-test-results.sh`
+4. Sync docs via `/sync-docs` (uses `docs-reviewer` agent internally)
+5. Comment review via the `comment-reviewer` Haiku agent — flags missing/stale comments in changed files
+6. Unified summary table with per-tier test results, upload status, doc sync outcome, and comment findings
+
+When all checks pass, the user commits via the Desktop App's button. `ci-verify-local.yml` then verifies the uploaded Check Run matches the commit.
+
+### Skill: /session-deploy
+
+Post-merge sync and worktree cleanup. Run AFTER the PR is merged via the Desktop App's CI popup. Steps:
+1. Detects main repo path via `git worktree list | head -1`
+2. Verifies the current branch's PR is actually merged (via `gh pr list --state merged`)
+3. Fast-forwards local `main` to the merged state
+4. Runs `scripts/test-smoke.sh` on main to verify the merged code still builds
+5. Removes OTHER merged worktrees immediately (skips dirty ones)
+6. Stages the current worktree for self-cleanup in `~/.claude/buddy-evolver-cleanup-pending.json`
+7. Cleans build caches with `scripts/cache-clean.sh --all`
+8. Reports the plan and instructs the user to type `/exit`
+
+The current worktree cannot remove itself (Claude Code holds its CWD), so the SessionEnd hook attempts cleanup on exit, and the next SessionStart hook retries as a safety net. Supports `--dry-run` for previewing without making changes.
+
+### Agent: comment-reviewer
+
+Haiku read-only agent used by `/end-session`. Audits inline code comments in recently changed files (filtered to Swift sources under `scripts/BuddyPatcher/Sources/**` and shell scripts under `scripts/**` and `hooks/**`). Five checks:
+1. Missing doc comments on non-obvious functions (>15 lines, touches anchor patterns, does byte-length math, or writes to the binary)
+2. `TODO`/`FIXME`/`HACK` markers
+3. Stale comments (two-signal rule — symbol mentioned but absent from surrounding ±10 lines)
+4. Security-critical files (`Validation.swift`, `BackupRestore.swift`, `SoulPatcher.swift`) without `// SECURITY:` markers on modified functions
+5. `shellcheck disable=` lines without justification comments
+
+Tools: `[Read, Glob, Grep]`. Never applies edits — reports only. Output sections: `MISSING_COMMENT`, `TODO_MARKER`, `STALE_COMMENT`, `SECURITY_COMMENT`, `SHELLCHECK_UNJUSTIFIED`, `SUMMARY`.
 
 ### Skill: /buddy-status
 
