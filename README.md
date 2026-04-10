@@ -347,7 +347,7 @@ Not currently. The plugin requires macOS `codesign` for binary re-signing after 
 <details>
 <summary>🛡️ <b>Is this safe? Can it break Claude Code?</b></summary>
 
-The original binary is always backed up before changes — like a save state before the boss fight. Run `/buddy reset` to restore it at any time. In the worst case, reinstalling Claude Code gives you a fresh binary.
+The original binary is always backed up before changes — like a save state before the boss fight. Run `/buddy-reset` to restore it at any time. In the worst case, reinstalling Claude Code gives you a fresh binary.
 
 </details>
 
