@@ -536,17 +536,22 @@ git clone https://github.com/Soul-Craft/buddy-evolver.git
 cd buddy-evolver
 
 # Build the Swift patcher (requires Xcode CLT with Swift 5.9+)
-swift build -c release --package-path scripts/BuddyPatcher
+make build
 
 # Run unit tests (94 tests, 8 suites)
-swift test --package-path scripts/BuddyPatcher
+make test
 
 # Run security validation tests
-bash scripts/test-security.sh
+make test-security
+
+# Run all tests
+make test-all
 
 # Install locally for testing (inside Claude Code)
 /plugin install --local .
 ```
+
+Run `make help` to see all available targets.
 
 > **Tip:** The lazy-build wrapper `scripts/run-buddy-patcher.sh` compiles the Swift tool on first use. You don't need to build manually unless you're modifying the source.
 
@@ -583,13 +588,19 @@ swift test --package-path scripts/BuddyPatcher && bash scripts/test-security.sh
 
 Issues and PRs welcome at [github.com/Soul-Craft/buddy-evolver](https://github.com/Soul-Craft/buddy-evolver).
 
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide — prerequisites, dev setup,
+coding standards, testing expectations, and how to add new species or patch types.
+
+For security issues, please use [GitHub Security Advisories](https://github.com/Soul-Craft/buddy-evolver/security/advisories/new)
+rather than opening a public issue. See [SECURITY.md](SECURITY.md) for details.
+
 **Development workflow:**
 
 1. Fork and clone the repo
 2. Create a feature branch
 3. Make your changes
-4. Run `swift test --package-path scripts/BuddyPatcher` and `bash scripts/test-security.sh`
-5. Open a PR against `main`
+4. Run `make test-all` (or `swift test --package-path scripts/BuddyPatcher && bash scripts/test-security.sh`)
+5. Open a PR against `main` — the [PR template](.github/PULL_REQUEST_TEMPLATE.md) will guide you
 
 **Key constraints** — if you modify the Swift source in `scripts/BuddyPatcher/`:
 

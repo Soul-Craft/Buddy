@@ -1,0 +1,70 @@
+name: Bug Report
+description: Something broke or didn't work as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps to reproduce the issue.
+      placeholder: |
+        1. Run /buddy-evolve
+        2. Choose species 'dragon'
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Fill in all fields — binary patching is version-sensitive.
+      value: |
+        - macOS version:
+        - Claude Code version: (run `claude --version`)
+        - Buddy Evolver version: 1.0.0
+        - Output of `/test-patch`: (paste results here)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: buddy-state
+    attributes:
+      label: Buddy state
+      description: What state is your buddy in?
+      options:
+        - Evolved (ran /buddy-evolve)
+        - Not evolved (original buddy)
+        - Reset (ran /buddy-reset)
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error output
+      description: Paste any terminal output or error messages.
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help diagnose the issue.

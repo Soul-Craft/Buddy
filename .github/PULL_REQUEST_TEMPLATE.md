@@ -12,9 +12,13 @@ cheap Ubuntu checks run in GitHub Actions automatically.
 
 -
 
-## Why
+## Type of change
 
-<!-- The motivation. If this fixes a bug, link the issue. -->
+- [ ] Bug fix
+- [ ] New feature (species, skill, patch type, etc.)
+- [ ] Refactoring (no behavior change)
+- [ ] Documentation
+- [ ] CI / tooling
 
 ## Testing checklist
 
@@ -26,11 +30,27 @@ Before requesting review, run the full local suite on macOS:
 
 <!-- Attach visual-smoke screenshot here if applicable -->
 
+### If modifying Swift code (`scripts/BuddyPatcher/`)
+
+- [ ] Byte-length invariant maintained — every patch produces identical-length output
+- [ ] New user inputs validated in `Validation.swift`
+- [ ] All `Data.write()` calls use `.atomic`
+- [ ] `--dry-run` works for any new patch functionality
+
+### If adding a new species
+
+- [ ] Added to `allSpecies` in `VariableMapDetection.swift`
+- [ ] Variable mapping added to **every** entry in `knownVarMaps`
+- [ ] `PatchLengthInvariantTests` cases added
+- [ ] Species table updated in `README.md`
+
+### If modifying skills, hooks, or agents
+
+- [ ] `CLAUDE.md` updated (or `/sync-docs` ran)
+- [ ] `README.md` updated if change is user-facing
+
 ## Scope checklist
 
-- [ ] No changes to byte-length invariants without updating tests
-- [ ] Any new user-facing input is validated in `Validation.swift`
-- [ ] New skills / agents / hooks are referenced in `CLAUDE.md` (or run `/sync-docs`)
 - [ ] No `.build/` or `test-results/` committed
 - [ ] Commit messages describe the "why", not just the "what"
 
