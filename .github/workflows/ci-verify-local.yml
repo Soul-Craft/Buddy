@@ -64,9 +64,22 @@ jobs:
               --jq '[.[] | select(.body | contains("Local Tests (macOS)"))] | length')
 
           if [ "${comment_found:-0}" -gt 0 ]; then
-              # Check whether the comment indicates a pass or failure
+              # Check whether the comment indicates a pass or failure.
+              # Matches "N/M passed" where N == M (all tests green),
+              # rather than hardcoding a specific total. Chained select()
+              # avoids running capture() on bodies that don't match
+              # test() first (capture throws on no match).
+              # Safe: all interpolations are shell vars (env:), and the
+              # --jq filter reads gh-api JSON that has already been
+              # fetched into memory; no GitHub event data flows in here.
               passing=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
-                  --jq '[.[] | select(.body | contains("Local Tests (macOS)")) | select(.body | contains("267/267 passed") or contains("passed"))] | length')
+                  --jq '[.[]
+                         | select(.body | contains("Local Tests (macOS)"))
+                         | select(.body | test("[0-9]+/[0-9]+ passed"))
+                         | select(.body
+                                  | capture("(?<p>[0-9]+)/(?<t>[0-9]+) passed")
+                                  | .p == .t)
+                        ] | length')
               if [ "${passing:-0}" -gt 0 ]; then
                   echo "status=success" >> "$GITHUB_OUTPUT"
                   echo "Found passing PR comment (PAT fallback)"

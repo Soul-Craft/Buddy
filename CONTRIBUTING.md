@@ -30,7 +30,7 @@ cd buddy-evolver
 make build
 # or: swift build -c release --package-path scripts/BuddyPatcher
 
-# Run unit tests (94 tests, 8 suites)
+# Run unit tests (178 tests across 12 files)
 make test
 # or: swift test --package-path scripts/BuddyPatcher
 
@@ -52,7 +52,7 @@ Three main areas contributors touch:
 
 | Area | Path | What's Here |
 |------|------|-------------|
-| Swift patcher | `scripts/BuddyPatcher/` | Binary patching engine, 94 unit tests |
+| Swift patcher | `scripts/BuddyPatcher/` | Binary patching engine, 178 unit tests |
 | Skills | `skills/` | Slash commands (`/buddy-evolve`, `/run-tests`, etc.) |
 | Hooks | `hooks/` | Session-start context, argument validation, pre-commit checks |
 
@@ -157,13 +157,17 @@ use `findAll()`, assert byte-length, add `[DRY RUN]` branch, call
 
 ## Testing Expectations
 
-| Change type | Required tests |
-|-------------|---------------|
-| Any Swift change | `make test` must pass (94 tests) |
-| Security-sensitive Swift | `make test-security` must pass |
-| New patch type | Add `PatchLengthInvariantTests` cases |
-| New species | Add to `VariableMapDetectionTests` |
-| New skill/hook | Manual end-to-end test inside Claude Code |
+| Change type | Required locally | Required before PR |
+|-------------|------------------|--------------------|
+| Any Swift change | `make test` (178 unit tests) | `make test-all` (303 tests across 8 tiers) |
+| Security-sensitive Swift | `make test` + `make test-security` | `make test-all` |
+| New bug fix | Add test to `RegressionTests.swift` | `make test-all` |
+| New patch type | Add `PatchLengthInvariantTests` cases | `make test-all` + `make test-compat` |
+| New species | Add to `VariableMapDetectionTests` | `make test-all` + `make test-compat` |
+| Shell scripts changed | `make lint` | `make test-all` |
+| Documentation changed | `make test-docs` | `make test-all` |
+| CLI output changed | `UPDATE_GOLDEN=1 make test-snapshots` (review diffs) | `make test-all` |
+| New skill/hook | Manual end-to-end test inside Claude Code | `make test-all` + `make test-docs` |
 
 ---
 
@@ -172,4 +176,4 @@ use `findAll()`, assert byte-length, add `[DRY RUN]` branch, call
 - Swift changes trigger the `security-reviewer` agent (read-only, reviews for
   validation gaps, byte-length violations, unsafe patterns)
 - Maintainer checks byte-length invariant compliance on all patcher changes
-- CI must pass (build + unit tests + security tests) before merge
+- CI must pass before merge: `ci-quality.yml` (lint/JSON/hygiene, runs on Ubuntu) and `ci-verify-local.yml` (confirms that `scripts/test-all.sh && scripts/upload-test-results.sh` has posted a passing Check Run on the head commit)

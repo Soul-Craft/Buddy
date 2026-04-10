@@ -23,7 +23,7 @@
           },
           {
             "type": "command",
-            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -qE 'git commit'; then echo '{\"systemMessage\": \"Before committing changes to BuddyPatcher Swift code, run swift test in scripts/BuddyPatcher/ to verify all tests pass. If tests have not been run yet this session, run them now before proceeding with the commit.\"}'; fi",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-test-reminder.sh",
             "timeout": 5
           },
           {

@@ -1,8 +1,9 @@
 #!/bin/bash
 # Master test runner for Buddy Evolver.
 #
-# Runs all automated test tiers (unit, security, integration, functional, UI)
-# and produces machine-readable output for upload-test-results.sh.
+# Runs all automated test tiers (smoke, unit, security, integration,
+# functional, UI) and produces machine-readable output for
+# upload-test-results.sh.
 #
 # Outputs:
 #   test-results/results.json   — summary (tier counts, pass/fail, duration)
@@ -111,6 +112,12 @@ run_tier() {
 }
 
 # ── Run all tiers ──────────────────────────────────────────────────
+#
+# Tiers are ordered cheapest-and-fastest first so broken builds fail
+# before expensive tiers waste time. Smoke must run first.
+
+run_tier "smoke" "Build verification + CLI contract (<30s)" \
+    bash "$SCRIPT_DIR/test-smoke.sh"
 
 run_tier "unit" "Swift XCTest suite — 175 tests" \
     swift test --package-path "$SCRIPT_DIR/BuddyPatcher"
@@ -127,6 +134,12 @@ run_tier "functional" "Byte-level patch correctness + Mach-O validity" \
 run_tier "ui" "Buddy card rendering against fixtures" \
     bash "$SCRIPT_DIR/test-ui.sh"
 
+run_tier "snapshots" "Golden file comparison for CLI output" \
+    bash "$SCRIPT_DIR/test-snapshots.sh"
+
+run_tier "docs" "Documentation path + link + count consistency" \
+    bash "$SCRIPT_DIR/test-docs.sh"
+
 OVERALL_END=$(date +%s)
 OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
 
@@ -140,6 +153,20 @@ import platform
 import subprocess
 import sys
 from datetime import datetime, timezone
+
+# Schema v2: per-tier "stage" field groups tiers into pipeline stages.
+# upload-test-results.sh reads this to render a staged summary table.
+# Unknown tiers default to stage=None for forward compatibility.
+STAGE_MAP = {
+    "smoke": "smoke",
+    "unit": "core",
+    "security": "core",
+    "integration": "real-world",
+    "functional": "real-world",
+    "ui": "real-world",
+    "snapshots": "full-system",
+    "docs": "peripheral",
+}
 
 tiers = []
 total_passed = 0
@@ -160,6 +187,7 @@ for row in rows:
         overall_exit = 1
     tiers.append({
         "name": name,
+        "stage": STAGE_MAP.get(name),
         "passed": passed,
         "failed": failed,
         "duration_seconds": duration,
@@ -173,7 +201,7 @@ def sh(cmd):
         return ""
 
 summary = {
-    "schema_version": 1,
+    "schema_version": 2,
     "timestamp": datetime.now(timezone.utc).isoformat(),
     "duration_seconds": $OVERALL_DURATION,
     "environment": {

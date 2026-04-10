@@ -27,17 +27,22 @@ Read the output and extract:
 ### 3. Display formatted report
 
 ```
-Test Suite Report
-═════════════════
+Test Suite Report — 178 tests across 12 files
+══════════════════════════════════════════════
 
-  ByteUtilsTests           ✅ / ❌
-  VariableMapDetectionTests ✅ / ❌
-  PatchEngineTests          ✅ / ❌
-  PatchLengthInvariantTests ✅ / ❌
+  AnalyzeTests              ✅ / ❌
   ArgumentParsingTests      ✅ / ❌
-  SoulPatcherTests          ✅ / ❌
-  MetadataTests             ✅ / ❌
-  BinaryDiscoveryTests      ✅ / ❌
+  BackupRestoreTests         ✅ / ❌
+  BinaryDiscoveryTests       ✅ / ❌
+  ByteUtilsTests             ✅ / ❌
+  MetadataTests              ✅ / ❌
+  OrchestrationTests         ✅ / ❌
+  PatchEngineTests           ✅ / ❌
+  PatchLengthInvariantTests  ✅ / ❌
+  RegressionTests            ✅ / ❌
+  SoulPatcherTests           ✅ / ❌
+  ValidationTests            ✅ / ❌
+  VariableMapDetectionTests  ✅ / ❌
 
   Total: N tests, M passed, K failed (X.XXs)
   Result: ALL PASS ✅  /  FAILURES ❌
@@ -47,12 +52,18 @@ Test Suite Report
 
 Show the specific test names and assertion messages that failed. Suggest checking the corresponding source files:
 
-- `ByteUtils.swift` — byte pattern matching
-- `VariableMapDetection.swift` — species variable maps
-- `PatchEngine.swift` — binary patching functions
-- `SoulPatcher.swift` — companion config updates
-- `Metadata.swift` — patch metadata persistence
+- `Analyze.swift` — binary introspection (--analyze mode)
 - `ArgumentParsing.swift` — CLI argument handling
+- `BackupRestore.swift` — backup/restore and SHA-256 verification
+- `BinaryDiscovery.swift` — binary path resolution
+- `ByteUtils.swift` — byte pattern matching
+- `Metadata.swift` — patch metadata persistence
+- `Orchestration.swift` — patch pipeline coordination
+- `PatchEngine.swift` — binary patching functions
+- `RegressionTests.swift` — one test per previously-fixed bug
+- `SoulPatcher.swift` — companion config updates
+- `Validation.swift` — input validation (emoji, name, personality, binary path)
+- `VariableMapDetection.swift` — species variable maps
 
 ### 5. If build fails
 

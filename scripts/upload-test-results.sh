@@ -95,6 +95,8 @@ duration = data.get("duration_seconds", 0)
 
 title = f"Local Tests (macOS) — {total_passed}/{total_tests} passed"
 
+schema_version = data.get("schema_version", 1)
+
 # Markdown summary body with tier breakdown
 lines = []
 lines.append(f"**Commit:** `{git.get('commit', '?')[:12]}` on `{git.get('branch', '?')}`")
@@ -102,13 +104,39 @@ lines.append(f"**Duration:** {duration}s")
 lines.append(f"**Environment:** {env.get('os', '?')} {env.get('os_version', '?')} ({env.get('machine', '?')})")
 lines.append(f"**Swift:** {env.get('swift_version', '?')}")
 lines.append("")
-lines.append("| Tier | Passed | Failed | Duration |")
-lines.append("|------|--------|--------|----------|")
-for tier in tiers:
-    marker = "✅" if tier.get("exit_code", 1) == 0 else "❌"
-    lines.append(
-        f"| {marker} {tier['name']} | {tier['passed']} | {tier['failed']} | {tier['duration_seconds']}s |"
-    )
+
+if schema_version >= 2:
+    # Group tiers by stage for a richer breakdown
+    STAGE_LABELS = {
+        "smoke": "Smoke",
+        "core": "Core",
+        "real-world": "Real-world",
+        "full-system": "Full system",
+        "peripheral": "Peripheral",
+    }
+    current_stage = None
+    lines.append("| Tier | Passed | Failed | Duration |")
+    lines.append("|------|--------|--------|----------|")
+    for tier in tiers:
+        stage = tier.get("stage") or ""
+        if stage and stage != current_stage:
+            label = STAGE_LABELS.get(stage, stage.title())
+            lines.append(f"| **{label}** | | | |")
+            current_stage = stage
+        marker = "✅" if tier.get("exit_code", 1) == 0 else "❌"
+        lines.append(
+            f"| {marker} {tier['name']} | {tier['passed']} | {tier['failed']} | {tier['duration_seconds']}s |"
+        )
+else:
+    # Schema v1: flat table
+    lines.append("| Tier | Passed | Failed | Duration |")
+    lines.append("|------|--------|--------|----------|")
+    for tier in tiers:
+        marker = "✅" if tier.get("exit_code", 1) == 0 else "❌"
+        lines.append(
+            f"| {marker} {tier['name']} | {tier['passed']} | {tier['failed']} | {tier['duration_seconds']}s |"
+        )
+
 lines.append(f"| **TOTAL** | **{total_passed}** | **{total_failed}** | **{duration}s** |")
 lines.append("")
 if git.get("dirty"):
