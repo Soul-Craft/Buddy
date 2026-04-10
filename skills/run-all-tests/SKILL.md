@@ -41,9 +41,9 @@ Test Pipeline Results
   ui                ✅        23/23       2s
   e2e               ✅        23/23       2s
   snapshots         ✅        6/6         1s
-  docs              ✅        14/14       1s
+  docs              ✅        16/16       1s
   ──────────────────────────────────────────────────────
-  TOTAL             ✅        326/326     40s
+  TOTAL             ✅        328/328     40s
 ```
 
 ### 4. On failure

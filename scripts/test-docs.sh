@@ -10,6 +10,7 @@
 #   6. CHANGELOG has an entry for the current plugin.json version
 #   7. skills/ directories each have a SKILL.md file
 #   8. hooks/hooks.json shell scripts exist on disk
+#   9. Session workflow skills (end-session, session-deploy) only reference real files
 #
 # Output: "Results: N passed, M failed" on the last line.
 set -uo pipefail
@@ -309,6 +310,71 @@ else
     printf '%b\n' "$missing_hook_list"
     FAILED=$((FAILED + 1))
 fi
+
+echo
+
+# ── Group 9: Session workflow skills reference real files ────────
+#
+# /end-session and /session-deploy orchestrate multiple scripts, skills, and
+# agents. If any of those references rot (script renamed, skill deleted, agent
+# moved), the workflow silently falls apart. This check asserts every referenced
+# path resolves at test time — much faster than discovering the break at commit.
+
+echo "  --- Group 9: Session workflow references ---"
+echo
+
+# The references below are the files each skill explicitly depends on.
+# Keep these lists in sync if the skills' dependencies change.
+END_SESSION_REFS=(
+    "scripts/test-all.sh"
+    "scripts/upload-test-results.sh"
+    "skills/token-review/SKILL.md"
+    "skills/sync-docs/SKILL.md"
+    "agents/comment-reviewer.md"
+)
+
+SESSION_DEPLOY_REFS=(
+    "scripts/test-smoke.sh"
+    "scripts/cache-clean.sh"
+    "scripts/process-pending-cleanup.sh"
+    "hooks/session-end.sh"
+)
+
+# check_refs SKILL_NAME SKILL_MD_PATH REF1 REF2 ...
+# Verifies that SKILL_MD_PATH exists and that all listed REFs exist on disk.
+# Reports a single PASS/FAIL line for the named skill.
+check_refs() {
+    local skill_name="$1"
+    local skill_md="$2"
+    shift 2
+    local refs=("$@")
+
+    if [ ! -f "$skill_md" ]; then
+        echo "  [FAIL] $skill_name SKILL.md missing at $skill_md"
+        FAILED=$((FAILED + 1))
+        return
+    fi
+
+    local missing=0
+    local missing_ref_list=""
+    for ref in "${refs[@]}"; do
+        if [ ! -e "$ref" ]; then
+            missing_ref_list="$missing_ref_list\n    $ref"
+            missing=$((missing + 1))
+        fi
+    done
+
+    if [ "$missing" -eq 0 ]; then
+        assert_pass "$skill_name references (${#refs[@]}) all exist on disk" "0"
+    else
+        echo "  [FAIL] $skill_name references $missing missing file(s):"
+        printf '%b\n' "$missing_ref_list"
+        FAILED=$((FAILED + 1))
+    fi
+}
+
+check_refs "/end-session" "skills/end-session/SKILL.md" "${END_SESSION_REFS[@]}"
+check_refs "/session-deploy" "skills/session-deploy/SKILL.md" "${SESSION_DEPLOY_REFS[@]}"
 
 echo
 

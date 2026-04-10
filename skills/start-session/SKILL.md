@@ -3,96 +3,38 @@ name: start-session
 description: Use when starting a dev session on Buddy Evolver, or to refresh project context. Use when the user says "start session", "refresh context", "what tools do I have", or "session status".
 ---
 
-# Start Session — Dev Context Check
+# Start Session — Dev Context Refresh
 
-Gather live project state and present a session readiness summary. This is the manual version of the SessionStart hook — use it to refresh context mid-session or when the hook output has scrolled out of context.
+Manual re-trigger of the SessionStart hook. Use this when the original hook output has scrolled out of context, or when you want a fresh snapshot of project state (binary status, git state, skills, agents, hooks, compatibility).
 
-## Step 1: Git state
+The SessionStart hook at `hooks/session-start.sh` is the single source of truth for session context. This skill delegates to it so there is no hardcoded list to drift.
 
-```bash
-echo "=== Git State ==="
-git rev-parse --abbrev-ref HEAD
-git log --oneline -5
-git status --short
-git rev-parse --abbrev-ref '@{u}' 2>/dev/null && {
-  echo "Ahead: $(git rev-list --count '@{u}..HEAD')"
-  echo "Behind: $(git rev-list --count 'HEAD..@{u}')"
-} || echo "No upstream tracked"
-```
-
-## Step 2: Binary and patch status
+## Step 1: Run the hook
 
 ```bash
-echo "=== Binary Status ==="
-BINARY=$(readlink ~/.local/bin/claude 2>/dev/null || echo "NOT_FOUND")
-echo "Binary: $BINARY"
-echo "Version: $(basename "$BINARY" 2>/dev/null || echo 'unknown')"
-test -f "$BINARY" && echo "Exists: yes" || echo "Exists: NO"
-test -f "${BINARY}.original-backup" && echo "Backup: yes" || echo "Backup: NO"
-test -f ~/.claude/backups/buddy-patch-meta.json && echo "Metadata: yes" || echo "Metadata: NO"
+CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}" bash "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh"
 ```
 
-## Step 3: Compatibility dry-run
+Present the output verbatim to the user inside a code block.
 
-Run only if the patcher binary is already compiled. If not compiled, skip and note it.
+## Step 2: Highlight warnings (if any)
 
-```bash
-PATCHER="${CLAUDE_PLUGIN_ROOT}/scripts/BuddyPatcher/.build/release/buddy-patcher"
-if [ -f "$PATCHER" ]; then
-  echo "=== Compatibility Check ==="
-  "${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" \
-    --dry-run --species dragon --rarity legendary --shiny \
-    --emoji "🐲" --name "Test" --personality "Test" 2>&1
-else
-  echo "=== Compatibility Check ==="
-  echo "Patcher not compiled yet. Run /test-patch to build and check."
-fi
-```
+Scan the hook output for these markers and, if present, surface them above the verbatim output as a short "Action needed" header:
 
-Check the output:
-- `[DRY RUN]` lines = patterns found (good)
-- `[!] WARNING` lines = patterns NOT found (needs attention)
+- `⚠ STALE` in the Main line → recommend: `git pull --rebase origin main` or rebase the branch
+- `Compatibility: WARNINGS` → recommend: `/test-patch` then `/update-species-map` if patterns moved
+- `backup_status: no backup` → recommend: evolve first before reset operations
+- `Pending cleanup:` line with non-zero `failed` count → note that retry happens on next session
 
-## Step 4: Present session summary
+## Step 3: Offer next action (optional)
 
-Combine all gathered info into a concise readiness report:
+If everything is healthy, end with a one-liner like:
+"Ready to work. What are we building?"
 
-```
-Session Readiness
-═════════════════
+If warnings were surfaced, ask whether the user wants to address them now or defer.
 
-  Branch:        [branch name]
-  Uncommitted:   [N files] or "clean"
-  Remote sync:   [ahead/behind or up to date]
-  Last work:     [most recent commit message]
+## Notes
 
-  Binary:        [found/not found] (v[version])
-  Backup:        [yes/no]
-  Compatibility: [all match / warnings / not checked]
-
-  Available Dev Tools:
-  ────────────────────
-  /run-tests         Swift test suite (178 tests)
-  /run-all-tests     Full 9-tier pipeline (326 tests)
-  /buddy-e2e-test    E2E flow validation (real binary)
-  /test-patch        Binary compatibility dry-run
-  /security-audit    Integrity + permissions check
-  /token-review      Context footprint audit
-  /cache-clean       Build artifact cleanup
-  /update-species-map  Binary pattern investigation
-  /end-session       Automated session wrap-up
-
-  Agents:
-  ───────
-  security-reviewer  Swift code security review
-  test-runner        Automated test execution
-  cache-analyzer     Disk usage analysis
-
-  Ready to go. Key constraints to remember:
-  • Byte-length invariant on all binary patches
-  • 3-byte species variable refs
-  • Atomic writes only (.atomic option)
-  • Validate inputs in Validation.swift
-```
-
-If any health checks show warnings (backup missing, compatibility issues), highlight them at the top and suggest the relevant skill (`/security-audit`, `/test-patch`, `/update-species-map`).
+- This skill should stay minimal. All discovery logic lives in `hooks/session-start.sh`.
+- If you want to add or remove things from the session context, edit the hook, not this skill.
+- The hook targets ≤60 lines of output and ≤10s runtime (typically <2s on cached fetches).
