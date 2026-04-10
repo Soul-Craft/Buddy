@@ -126,11 +126,15 @@ final class OrchestrationTests: XCTestCase {
 
         let result = runPatchPipeline(data: data, opts: opts)
 
+        // Single consolidated warning instead of per-patch warnings
         XCTAssertTrue(
-            result.warnings.contains { $0.contains("No known anchor matched") },
-            "Should warn when no known anchor is found"
+            result.warnings.contains { $0.contains("No matching anchor found") },
+            "Should warn once when no known anchor is found"
         )
-        // Fallback is the newest var map
+        XCTAssertEqual(result.warnings.count, 1, "Should emit exactly one warning")
+        // Returns 0 patches — pipeline short-circuits on anchor miss
+        XCTAssertEqual(result.totalPatches, 0)
+        // Fallback is still the newest var map
         XCTAssertEqual(result.varMap["duck"], knownVarMaps[0]["duck"])
     }
 

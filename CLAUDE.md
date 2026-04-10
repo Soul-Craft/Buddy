@@ -19,6 +19,7 @@ agents/test-runner.md            Test execution agent for Swift suite
 skills/buddy-evolve/             Evolution skill (/buddy-evolve)
 skills/buddy-reset/              Reset skill (/buddy-reset)
 skills/buddy-status/             Buddy card display (/buddy-status)
+skills/buddy-e2e-test/           E2E flow validation (/buddy-e2e-test)
 skills/test-patch/               Dry-run validation (/test-patch)
 skills/run-tests/                Swift test runner (/run-tests)
 skills/run-all-tests/            Full pipeline runner (/run-all-tests)
@@ -41,6 +42,7 @@ scripts/test-security.sh         Security validation test suite (27 tests)
 scripts/test-integration.sh      End-to-end patch/restore/metadata flows (23 tests)
 scripts/test-functional.sh       Byte-level patch correctness + Mach-O validity (19 tests)
 scripts/test-ui.sh               Buddy card rendering against fixtures (23 tests)
+scripts/test-e2e.sh              E2E tier — real-binary reset→evolve→verify→reset flow (23 tests)
 scripts/test-snapshots.sh        Golden file comparison for CLI output (6 tests)
 scripts/test-docs.sh             Documentation path + link + count consistency (14 tests)
 scripts/test-compatibility.sh    Compatibility validation against knownVarMaps (~27 tests, on-demand)
@@ -128,9 +130,9 @@ All user-provided inputs are validated before any write operation:
 
 ## Testing
 
-300 automated tests in `test-all.sh` (8 tiers) + 34 on-demand tests, plus an interactive visual smoke test. The critical design decision: **macOS-dependent tests run locally on the contributor's machine, NOT in GitHub Actions.** GitHub runners only run cheap Ubuntu-based quality checks. This keeps CI costs bounded while still enforcing test passage on every PR.
+326 automated tests in `test-all.sh` (9 tiers) + 34 on-demand tests, plus an interactive visual smoke test. The critical design decision: **macOS-dependent tests run locally on the contributor's machine, NOT in GitHub Actions.** GitHub runners only run cheap Ubuntu-based quality checks. This keeps CI costs bounded while still enforcing test passage on every PR.
 
-### The 8 automated tiers (run via `test-all.sh`)
+### The 9 automated tiers (run via `test-all.sh`)
 
 | Tier | Script | Tests | Stage | Purpose |
 |------|--------|-------|-------|---------|
@@ -140,6 +142,7 @@ All user-provided inputs are validated before any write operation:
 | Integration | `scripts/test-integration.sh` | 23 | real-world | End-to-end patch/restore/metadata flows against a synthetic binary |
 | Functional | `scripts/test-functional.sh` | 19 | real-world | Byte-level patch verification + Mach-O validity + codesign |
 | UI | `scripts/test-ui.sh` | 23 | real-world | Buddy card rendering against pinned JSON fixtures |
+| E2E | `scripts/test-e2e.sh` | 23 | real-world | Real-binary reset→evolve→verify→reset flow + UI render assertions |
 | Snapshots | `scripts/test-snapshots.sh` | 6 | full-system | Golden file comparison for CLI output |
 | Docs | `scripts/test-docs.sh` | 14 | peripheral | Documentation path + link + count consistency |
 
@@ -204,6 +207,10 @@ Automated session wrap-up. Detects what changed during the session (Swift code, 
 
 Read-only display of the current buddy as a visual card with rarity flair, stat bars, and age. Reads `~/.claude.json` and `~/.claude/backups/buddy-patch-meta.json`. Shows different cards for evolved, wild (un-evolved), and missing buddies. No files modified.
 
+### Skill: /buddy-e2e-test
+
+End-to-end validation of the full Buddy Evolver flow against the real Claude Code binary. Runs reset → evolve to Aethos (legendary shiny dragon, full stats) → verify via `test-ui-renderer.py` (JSON + visual card) → reset → verify cleanup. Installs a bash `trap` so any mid-flow failure still triggers `--restore`. Non-conversational (`disable-model-invocation: true`). Use for pre-release validation or after upgrading Claude Code. Also runs automatically as the `e2e` tier in `test-all.sh`, where it gracefully skips if no Claude Code binary is installed.
+
 ### Hook: byte-length protection
 
 A `PreToolUse` hook in `.claude/settings.json` fires when editing files in `BuddyPatcher/`. It injects a reminder about the byte-length invariant into Claude's context. This is a prompt-based hook (awareness, not enforcement).
@@ -246,7 +253,7 @@ Runs `swift test` in `scripts/BuddyPatcher/`, parses results per suite (12 files
 
 ### Skill: /run-all-tests
 
-Runs the full 8-tier test pipeline via `scripts/test-all.sh`, reads `test-results/results.json`, and reports a per-tier summary table grouped by stage (smoke → core → real-world → full-system → peripheral). On failure, suggests the appropriate follow-up skill or command for each tier type. Non-conversational (`disable-model-invocation: true`).
+Runs the full 9-tier test pipeline via `scripts/test-all.sh`, reads `test-results/results.json`, and reports a per-tier summary table grouped by stage (smoke → core → real-world → full-system → peripheral). On failure, suggests the appropriate follow-up skill or command for each tier type. Non-conversational (`disable-model-invocation: true`).
 
 ### Skill: /token-review
 

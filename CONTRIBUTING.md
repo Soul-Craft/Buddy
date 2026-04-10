@@ -159,7 +159,7 @@ use `findAll()`, assert byte-length, add `[DRY RUN]` branch, call
 
 | Change type | Required locally | Required before PR |
 |-------------|------------------|--------------------|
-| Any Swift change | `make test` (178 unit tests) | `make test-all` (303 tests across 8 tiers) |
+| Any Swift change | `make test` (178 unit tests) | `make test-all` (326 tests across 9 tiers) |
 | Security-sensitive Swift | `make test` + `make test-security` | `make test-all` |
 | New bug fix | Add test to `RegressionTests.swift` | `make test-all` |
 | New patch type | Add `PatchLengthInvariantTests` cases | `make test-all` + `make test-compat` |

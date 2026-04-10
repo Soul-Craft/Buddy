@@ -119,7 +119,7 @@ run_tier() {
 run_tier "smoke" "Build verification + CLI contract (<30s)" \
     bash "$SCRIPT_DIR/test-smoke.sh"
 
-run_tier "unit" "Swift XCTest suite — 175 tests" \
+run_tier "unit" "Swift XCTest suite — 178 tests" \
     swift test --package-path "$SCRIPT_DIR/BuddyPatcher"
 
 run_tier "security" "Input validation, hook, injection checks" \
@@ -133,6 +133,9 @@ run_tier "functional" "Byte-level patch correctness + Mach-O validity" \
 
 run_tier "ui" "Buddy card rendering against fixtures" \
     bash "$SCRIPT_DIR/test-ui.sh"
+
+run_tier "e2e" "Real-binary reset→evolve→verify→reset flow" \
+    bash "$SCRIPT_DIR/test-e2e.sh"
 
 run_tier "snapshots" "Golden file comparison for CLI output" \
     bash "$SCRIPT_DIR/test-snapshots.sh"
@@ -164,6 +167,7 @@ STAGE_MAP = {
     "integration": "real-world",
     "functional": "real-world",
     "ui": "real-world",
+    "e2e": "real-world",
     "snapshots": "full-system",
     "docs": "peripheral",
 }

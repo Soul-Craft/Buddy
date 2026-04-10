@@ -233,11 +233,21 @@ if !opts.dryRun {
 print()
 if opts.dryRun {
     print("  [DRY RUN] No changes were made.")
-} else {
+} else if totalPatches > 0 {
     print("  ✅ Evolution complete! \(totalPatches) binary patches applied.")
     print()
     print("  ⚠️  Restart Claude Code to see your evolved buddy:")
     print("     pkill -f claude && claude")
+    print()
+    print("  To revert: run-buddy-patcher.sh --restore")
+} else {
+    let hasSoul = opts.name != nil || opts.personality != nil || opts.stats != nil
+    if hasSoul {
+        print("  ✅ Soul customization applied (0 binary patches).")
+        print("     Binary patterns not found — run /update-species-map to restore full patching.")
+    } else {
+        print("  ⚠️  No patches applied.")
+    }
     print()
     print("  To revert: run-buddy-patcher.sh --restore")
 }

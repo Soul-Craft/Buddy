@@ -463,7 +463,8 @@ The plugin ships 12 skills, 5 agents, and 5 hooks:
 | Skill | Description |
 |-------|-------------|
 | `/run-tests` | Run Swift test suite (178 tests across 12 files) with per-suite reporting |
-| `/run-all-tests` | Run the full 8-tier pipeline via `test-all.sh` with per-tier summary table |
+| `/run-all-tests` | Run the full 9-tier pipeline via `test-all.sh` with per-tier summary table |
+| `/buddy-e2e-test` | Real-binary E2E: reset → evolve to Aethos → verify → reset with pass/fail table |
 | `/cache-clean` | Interactive cache management with dry-run preview |
 | `/token-review` | 5-phase context footprint audit with optimization recommendations |
 | `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
@@ -587,14 +588,14 @@ Run `make help` to see all available targets.
 | `ValidationTests` | Input validation (emoji, name, personality, stats, binary) |
 | `VariableMapDetectionTests` | Anchor detection, version compatibility |
 
-**303 automated tests** across 8 tiers: smoke (13) + unit (178) + security (27) + integration (23) + functional (19) + UI (23) + snapshots (6) + docs (14). Plus 34 on-demand tests (27 compat + 7 perf). See [`CLAUDE.md`](CLAUDE.md) for the full testing architecture.
+**326 automated tests** across 9 tiers: smoke (13) + unit (178) + security (27) + integration (23) + functional (19) + UI (23) + e2e (23) + snapshots (6) + docs (14). Plus 34 on-demand tests (27 compat + 7 perf). See [`CLAUDE.md`](CLAUDE.md) for the full testing architecture.
 
 **CI** is local-first: `ci-quality.yml` runs on Ubuntu for every PR (shellcheck, JSON/YAML validation, hygiene checks). macOS-dependent tests run on contributor machines via `scripts/test-all.sh && scripts/upload-test-results.sh`; `ci-verify-local.yml` blocks merge until the upload appears and passes.
 
 Run everything locally:
 
 ```bash
-make test-all                   # all 8 tiers, emits test-results/results.json
+make test-all                   # all 9 tiers, emits test-results/results.json
 scripts/upload-test-results.sh  # publish as GitHub Check Run on this commit
 make coverage                   # local HTML coverage report → test-results/coverage/index.html
 ```

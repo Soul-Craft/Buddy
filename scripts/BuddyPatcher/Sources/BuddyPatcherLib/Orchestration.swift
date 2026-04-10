@@ -37,15 +37,32 @@ public func runPatchPipeline(data: [UInt8], opts: Options) -> PipelineResult {
     var warnings: [String] = []
 
     // Detect var map
+    let hasBinaryOps = opts.species != nil || opts.rarity != nil || opts.shiny || opts.noShiny || opts.emoji != nil
     let varMap: [String: String]
     let anchor: [UInt8]
     if let detected = detectVarMap(in: patched) {
         varMap = detected.varMap
         anchor = detected.anchor
+    } else if hasBinaryOps {
+        // No known anchor pattern found — skip all binary patches and return early with a
+        // single actionable message rather than emitting one warning per patch type.
+        let fallback = knownVarMaps[0]
+        warnings.append(
+            "No matching anchor found in this binary — binary patches skipped " +
+            "(species/rarity/shiny/art). Soul customization will still be applied. " +
+            "Run /update-species-map to investigate."
+        )
+        return PipelineResult(
+            patchedData: patched,
+            totalPatches: 0,
+            varMap: fallback,
+            anchor: anchorForMap(fallback),
+            warnings: warnings
+        )
     } else {
+        // No binary patches requested (soul-only) — use fallback silently.
         varMap = knownVarMaps[0]
         anchor = anchorForMap(varMap)
-        warnings.append("No known anchor matched — using newest variable map as fallback")
     }
 
     // Species

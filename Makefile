@@ -1,7 +1,7 @@
 PKG = scripts/BuddyPatcher
 
 .PHONY: build lint test-smoke test test-security \
-        test-integration test-functional test-ui \
+        test-integration test-functional test-ui test-e2e \
         test-snapshots test-docs test-compat test-perf \
         test-all test-full coverage clean help
 
@@ -33,6 +33,9 @@ test-functional: ## Byte-level patch correctness + Mach-O validity (19 tests)
 
 test-ui: ## Buddy card rendering against fixtures (23 tests)
 	@bash scripts/test-ui.sh
+
+test-e2e: build ## Real-binary reset→evolve→verify→reset flow (23 tests)
+	@bash scripts/test-e2e.sh
 
 # ── Stage 5: Full system ──────────────────────────────────────────
 test-snapshots: build ## Golden file comparison for CLI output (6 tests)

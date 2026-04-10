@@ -39,10 +39,11 @@ Test Pipeline Results
   integration       ✅        23/23       6s
   functional        ✅        19/19       5s
   ui                ✅        23/23       2s
+  e2e               ✅        23/23       2s
   snapshots         ✅        6/6         1s
   docs              ✅        14/14       1s
   ──────────────────────────────────────────────────────
-  TOTAL             ✅        303/303     38s
+  TOTAL             ✅        326/326     40s
 ```
 
 ### 4. On failure

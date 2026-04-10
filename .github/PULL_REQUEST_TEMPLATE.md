@@ -24,7 +24,7 @@ cheap Ubuntu checks run in GitHub Actions automatically.
 
 Before requesting review, run the full local suite on macOS:
 
-- [ ] `make test-all` — all 8 tiers pass (303 tests: smoke / unit / security / integration / functional / UI / snapshots / docs)
+- [ ] `make test-all` — all 9 tiers pass (326 tests: smoke / unit / security / integration / functional / UI / e2e / snapshots / docs)
 - [ ] `scripts/upload-test-results.sh` — Check Run appears on this PR's head commit
 - [ ] If touching UI: `scripts/test-visual-smoke.sh` — visual checks pass, screenshot attached below
 
