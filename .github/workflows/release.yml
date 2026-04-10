@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: macos-14
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache SPM build
+        uses: actions/cache@v4
+        with:
+          path: scripts/BuddyPatcher/.build
+          key: spm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/BuddyPatcher/Package.swift', 'scripts/BuddyPatcher/Sources/**/*.swift') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Build (release)
+        run: swift build -c release --package-path scripts/BuddyPatcher
+
+      - name: Unit tests
+        run: swift test --package-path scripts/BuddyPatcher
+
+      - name: Security tests
+        run: bash scripts/test-security.sh
+
+      - name: Validate tag matches plugin.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PLUGIN_VERSION=$(python3 -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          if [ "$TAG" != "$PLUGIN_VERSION" ]; then
+            echo "Error: tag v$TAG does not match plugin.json version $PLUGIN_VERSION"
+            exit 1
+          fi
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Extract the block between ## [VERSION] and the next ## [
+          NOTES=$(awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ steps.changelog.outputs.notes }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Buddy Evolver $GITHUB_REF_NAME" \
+            --notes "$RELEASE_NOTES"
