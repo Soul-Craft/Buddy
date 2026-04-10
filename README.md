@@ -1,5 +1,6 @@
 # 🍄 Buddy Evolver | Claude Code Plugin
 
+[![CI](https://github.com/Soul-Craft/buddy-evolver/actions/workflows/ci.yml/badge.svg)](https://github.com/Soul-Craft/buddy-evolver/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -65,23 +66,31 @@ Pick the species. Choose the rarity. Name it. Define its personality. Max out it
 
 ## 📋 Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Install](#install)
-- [Quick Start](#quick-start)
+**Use It**
+
+- [Prerequisites](#-prerequisites)
+- [Install](#-install)
+- [Quick Start](#-quick-start)
 - [Commands](#commands)
-- [Species](#species)
-- [Rarity Tiers](#rarity-tiers)
-- [Stats](#stats)
-- [How It Works](#how-it-works)
-- [After Claude Code Updates](#after-claude-code-updates)
-- [Troubleshooting](#troubleshooting)
+- [Species](#-species)
+- [Rarity Tiers](#-rarity-tiers)
+- [Stats](#-stats)
+- [How It Works](#-how-it-works)
+- [After Claude Code Updates](#-after-claude-code-updates)
+- [Troubleshooting](#-troubleshooting)
 - [Uninstall](#uninstall)
-- [Contributing](#contributing)
-- [License](#license)
+
+**Build It**
+
+- [Architecture](#architecture)
+- [Security Model](#security-model)
+- [Development Setup](#-development-setup)
+- [Testing](#-testing)
+- [Contributing](#-contributing)
+- [Acknowledgments](#-acknowledgments)
+- [License](#-license)
 
 ---
-
-<a id="prerequisites"></a>
 
 ## 📦 Prerequisites
 
@@ -92,8 +101,6 @@ Before installing, make sure you have:
 - 🤖 **Claude Code** — CLI version with the Buddy feature
 
 ---
-
-<a id="install"></a>
 
 ## 🔧 Install
 
@@ -114,8 +121,6 @@ Then restart Claude Code to activate the plugin.
 This adds slash commands including `/buddy-evolve`, `/buddy-reset`, `/buddy-status`, `/test-patch`, `/security-audit`, and `/update-species-map`.
 
 ---
-
-<a id="quick-start"></a>
 
 ## 🎮 Quick Start
 
@@ -204,8 +209,6 @@ Run this if something feels off, or after a Claude Code update to make sure ever
 
 ---
 
-<a id="species"></a>
-
 ## 🧬 Species
 
 Choose from 18 species during evolution:
@@ -220,8 +223,6 @@ Choose from 18 species during evolution:
 
 ---
 
-<a id="rarity-tiers"></a>
-
 ## ⭐ Rarity Tiers
 
 Rarity determines how often your buddy reacts to your work — like a companion's chattiness slider:
@@ -235,8 +236,6 @@ Rarity determines how often your buddy reacts to your work — like a companion'
 | **🪨 Common** | 5% | The strong, silent type |
 
 ---
-
-<a id="stats"></a>
 
 ## 📊 Stats
 
@@ -258,8 +257,6 @@ Five RPG stats, each ranging 0–99. Choose a preset during evolution or min-max
 
 ---
 
-<a id="how-it-works"></a>
-
 ## 🔬 How It Works
 
 The plugin patches the Claude Code binary (a Bun-compiled Mach-O executable) to swap your buddy's species, rarity, shiny status, and ASCII art. Name and personality are written to `~/.claude.json` separately.
@@ -275,8 +272,6 @@ The important bits:
 - 🔄 Everything is fully reversible with `/buddy-reset`
 
 ---
-
-<a id="after-claude-code-updates"></a>
 
 ## 🔄 After Claude Code Updates
 
@@ -299,8 +294,6 @@ The patching script auto-detects which binary version you're running and uses th
 3. 💾 Your backup is safe and unaffected by updates
 
 ---
-
-<a id="troubleshooting"></a>
 
 ## 🩹 Troubleshooting
 
@@ -380,17 +373,249 @@ If you skip the reset, your customized buddy remains until the next Claude Code 
 
 ---
 
-<a id="contributing"></a>
+# 🛠️ For Developers
+
+Everything below is for contributors and developers working on the plugin itself.
+
+---
+
+<a id="architecture"></a>
+
+## 🏗️ Architecture
+
+<details>
+<summary>📁 Project structure</summary>
+
+```
+.claude-plugin/
+  plugin.json                     Plugin manifest (name, version, metadata)
+  marketplace.json                Marketplace listing
+  agents/                         Plugin agents (cache-analyzer, docs-reviewer, token-review)
+.claude/settings.json             Byte-length invariant reminder hook
+.github/workflows/ci.yml          CI: build + test + security checks (macOS 14)
+agents/
+  security-reviewer.md            Security review agent for Swift changes
+  test-runner.md                  Test execution agent
+hooks/
+  hooks.json                      Hook definitions (SessionStart + PreToolUse)
+  session-start.sh                Dev context injection at session startup
+  validate-patcher-args.sh        Shell injection prevention for patcher args
+  check-doc-freshness.sh          Pre-commit doc sync reminder
+scripts/
+  BuddyPatcher/                   Swift binary patching engine (zero dependencies)
+    Package.swift                 SPM manifest (Swift 5.9, macOS 13+)
+    Sources/BuddyPatcher/        CLI entry point
+    Sources/BuddyPatcherLib/     Library: patching, validation, backup, analysis
+    Tests/BuddyPatcherTests/     94 tests across 8 suites
+  run-buddy-patcher.sh            Lazy-build wrapper (compiles on first use)
+  cache-clean.sh                  Cache cleanup utility
+  test-security.sh                Security validation test suite
+skills/                           12 slash commands (see tables below)
+```
+
+</details>
+
+### Data flow
+
+```
+/buddy-evolve
+  → Reads current buddy from ~/.claude.json
+  → Collects 6 choices (species, rarity, emoji, name, personality, stats)
+  → Calls run-buddy-patcher.sh --species X --rarity Y ...
+  → Swift tool backs up binary, patches in-place, re-signs with codesign
+  → User restarts Claude Code
+
+/buddy-reset
+  → Verifies backup integrity (SHA-256)
+  → Copies backup over patched binary, restores ~/.claude.json
+  → Re-signs binary
+```
+
+### Plugin automation
+
+The plugin ships 12 skills, 5 agents, and 5 hooks:
+
+<details>
+<summary>📜 Skills (12 slash commands)</summary>
+
+**User-facing:**
+
+| Skill | Description |
+|-------|-------------|
+| `/buddy-evolve` | Interactive 4-act evolution — species, rarity, emoji, name, personality, stats |
+| `/buddy-reset` | Restore original buddy from backup |
+| `/buddy-status` | Display current buddy as a visual card |
+| `/test-patch` | Dry-run validation after Claude Code updates |
+| `/update-species-map` | Investigate binary when anchor patterns break |
+| `/security-audit` | 9-point integrity and permission check |
+
+**Developer-facing:**
+
+| Skill | Description |
+|-------|-------------|
+| `/run-tests` | Run Swift test suite (94 tests, 8 suites) with per-suite reporting |
+| `/cache-clean` | Interactive cache management with dry-run preview |
+| `/token-review` | 5-phase context footprint audit with optimization recommendations |
+| `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
+| `/start-session` | Refresh dev context (git state, binary version, compatibility) |
+| `/end-session` | Automated wrap-up: runs tests, security review, token review, cache cleanup |
+
+</details>
+
+<details>
+<summary>🤖 Agents (5 subagents)</summary>
+
+| Agent | Purpose |
+|-------|---------|
+| `security-reviewer` | Reviews Swift code for validation gaps, byte-length violations, unsafe patterns |
+| `test-runner` | Builds and runs Swift tests, parses per-suite results |
+| `cache-analyzer` | Scans build artifacts, orphaned worktrees, backup sizes, disk usage |
+| `docs-reviewer` | Detects documentation gaps, stale entries, and path mismatches |
+| `token-review` | Context footprint analysis with optimization scoring |
+
+</details>
+
+<details>
+<summary>🔗 Hooks (5 automation hooks)</summary>
+
+| Hook | Trigger | Purpose |
+|------|---------|---------|
+| Session context | `SessionStart` | Injects git state, binary version, compatibility status, backup health |
+| Argument validation | `PreToolUse` (Bash) | Validates patcher args for shell metacharacters, injection, length limits |
+| Test reminder | `PreToolUse` (Bash) | Reminds to run `swift test` before `git commit` on Swift changes |
+| Doc freshness | `PreToolUse` (Bash) | Warns if code changed but CLAUDE.md/README.md weren't updated |
+| Byte-length reminder | `PreToolUse` (Edit/Write) | Reminds about byte-length invariant when editing Swift sources |
+
+</details>
+
+> For the full architecture reference, see [CLAUDE.md](CLAUDE.md).
+
+---
+
+<a id="security-model"></a>
+
+## 🛡️ Security Model
+
+The plugin uses defense-in-depth across three layers to protect binary patching operations:
+
+<details>
+<summary>🔍 Layer details</summary>
+
+**Layer 1: Swift input validation** (`Validation.swift`)
+
+All user-provided inputs are validated before any write operation:
+- **Emoji** — Single grapheme cluster, all Unicode scalars must be `.isEmoji`, max 16 UTF-8 bytes
+- **Name** — Non-empty, max 100 chars, no control characters
+- **Personality** — Non-empty, max 500 chars, no control characters
+- **Stats** — JSON with known keys only (`debugging`, `patience`, `chaos`, `wisdom`, `snark`), integer values 0–100
+- **Binary path** — Must exist, be a regular file, have Mach-O magic bytes
+
+**Layer 2: Atomic operations and integrity**
+
+- All file writes use `.atomic` option (`rename(2)` under the hood) — no partial writes on crash
+- SHA-256 hash of original binary stored on first backup
+- Restore verifies backup integrity against stored hash before overwriting
+- Codesign failure after patching triggers automatic restore + exit(1)
+- Backup directory: `0o700`; backup files: `0o600`
+
+**Layer 3: Plugin-level enforcement**
+
+- **PreToolUse hook** intercepts Bash calls to the patcher, validates for shell metacharacters (`;|&$\``), length limits, and `$()` subshell injection
+- **Security audit skill** (`/security-audit`) provides on-demand integrity checking
+- **Security review agent** reviews Swift code changes for missing validation, byte-length violations, and unsafe patterns
+
+</details>
+
+---
+
+## 💻 Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/Soul-Craft/buddy-evolver.git
+cd buddy-evolver
+
+# Build the Swift patcher (requires Xcode CLT with Swift 5.9+)
+swift build -c release --package-path scripts/BuddyPatcher
+
+# Run unit tests (94 tests, 8 suites)
+swift test --package-path scripts/BuddyPatcher
+
+# Run security validation tests
+bash scripts/test-security.sh
+
+# Install locally for testing (inside Claude Code)
+/plugin install --local .
+```
+
+> **Tip:** The lazy-build wrapper `scripts/run-buddy-patcher.sh` compiles the Swift tool on first use. You don't need to build manually unless you're modifying the source.
+
+---
+
+## 🧪 Testing
+
+**94 unit tests** across 8 suites validate every component:
+
+| Suite | What It Tests |
+|-------|--------------|
+| `ArgumentParsingTests` | CLI flag parsing, unknown flag rejection |
+| `BinaryDiscoveryTests` | Symlink resolution, error handling |
+| `ByteUtilsTests` | Pattern search correctness, edge cases |
+| `MetadataTests` | JSON serialization, file I/O |
+| `PatchEngineTests` | Species, rarity, shiny, art patching + idempotency |
+| `PatchLengthInvariantTests` | **Byte-length equality** — the critical invariant |
+| `SoulPatcherTests` | `~/.claude.json` updates, missing file handling |
+| `VariableMapDetectionTests` | Anchor detection, version compatibility |
+
+**Security tests** (`scripts/test-security.sh`) validate input rejection at both Swift and hook layers.
+
+**CI** runs on every push/PR to `main` via GitHub Actions (macOS 14): build, unit tests, and security tests. Runs are cached via SPM build artifacts.
+
+Run everything locally:
+
+```bash
+swift test --package-path scripts/BuddyPatcher && bash scripts/test-security.sh
+```
+
+---
 
 ## 🤝 Contributing
 
 Issues and PRs welcome at [github.com/Soul-Craft/buddy-evolver](https://github.com/Soul-Craft/buddy-evolver).
 
-If you modify the Swift source in `scripts/BuddyPatcher/`, every binary patch **must** produce output identical in byte length to the original — like fitting new sprites into the same ROM. Test with `--dry-run` before committing.
+**Development workflow:**
+
+1. Fork and clone the repo
+2. Create a feature branch
+3. Make your changes
+4. Run `swift test --package-path scripts/BuddyPatcher` and `bash scripts/test-security.sh`
+5. Open a PR against `main`
+
+**Key constraints** — if you modify the Swift source in `scripts/BuddyPatcher/`:
+
+- Every binary patch **must** produce output identical in byte length to the original — like fitting new sprites into the same ROM
+- Use `findAll()` to locate patterns (never hardcode offsets)
+- Add input validation in `Validation.swift` for any new user-provided arguments
+- Use `.atomic` option on all `Data.write()` calls
+- Add a `[DRY RUN]` branch for `--dry-run` mode in any new patch type
+- Test with `--dry-run` before committing
+
+**When updating for new Claude Code versions:**
+
+- Check if anchor patterns still exist in the new binary (`/test-patch`)
+- Variable names may change — update `knownVarMaps` in `VariableMapDetection.swift`
+- Test with `--dry-run` first, then verify with the full test suite
+
+CI enforces build + unit tests + security tests on every PR.
 
 ---
 
-<a id="license"></a>
+## 🙏 Acknowledgments
+
+- The [Claude Code](https://docs.anthropic.com/en/docs/claude-code) team at Anthropic for the Buddy feature and the plugin system that makes this possible
+- The Claude Code plugin ecosystem and its community of builders
+
+---
 
 ## 📄 License
 
