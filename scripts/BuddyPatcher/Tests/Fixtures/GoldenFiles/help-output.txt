@@ -1,0 +1,19 @@
+Buddy Customizer — evolve your Claude Code terminal pet
+
+USAGE:
+  buddy-patcher [OPTIONS]
+
+OPTIONS:
+  --species <name>        Target species (duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara)
+  --rarity <tier>         Target rarity (common, uncommon, rare, epic, legendary)
+  --shiny                 Make buddy shiny (always)
+  --no-shiny              Remove shiny (restore 1% probability)
+  --emoji <emoji>         Custom emoji for buddy art (requires --species)
+  --name <name>           Buddy name (written to ~/.claude.json)
+  --personality <text>    Buddy personality description
+  --stats <json>          Stats as JSON: {"debugging":99,...}
+  --restore               Restore original buddy from backup
+  --dry-run               Show what would change without applying
+  --analyze               Analyze binary for pattern locations
+  --binary <path>         Override binary path (for testing)
+  --help                  Show this help message

@@ -72,7 +72,8 @@ Session Readiness
 
   Available Dev Tools:
   ────────────────────
-  /run-tests         Swift test suite (94 tests)
+  /run-tests         Swift test suite (178 tests)
+  /run-all-tests     Full 8-tier pipeline (303 tests)
   /test-patch        Binary compatibility dry-run
   /security-audit    Integrity + permissions check
   /token-review      Context footprint audit

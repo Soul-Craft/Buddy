@@ -24,9 +24,16 @@ cheap Ubuntu checks run in GitHub Actions automatically.
 
 Before requesting review, run the full local suite on macOS:
 
-- [ ] `scripts/test-all.sh` — all 5 tiers pass (unit / security / integration / functional / UI)
+- [ ] `make test-all` — all 8 tiers pass (303 tests: smoke / unit / security / integration / functional / UI / snapshots / docs)
 - [ ] `scripts/upload-test-results.sh` — Check Run appears on this PR's head commit
 - [ ] If touching UI: `scripts/test-visual-smoke.sh` — visual checks pass, screenshot attached below
+
+**Additional checks (run when relevant):**
+- [ ] `make test-smoke` — if you want a fast (<30s) build + CLI sanity check before the full run
+- [ ] `UPDATE_GOLDEN=1 make test-snapshots` — if CLI output changed intentionally (review golden file diffs before committing)
+- [ ] `make test-docs` — if documentation changed
+- [ ] `make test-compat` — if touching patch patterns or `knownVarMaps`
+- [ ] `make lint` — if modifying shell scripts
 
 <!-- Attach visual-smoke screenshot here if applicable -->
 

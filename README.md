@@ -401,16 +401,25 @@ hooks/
   session-start.sh                Dev context injection at session startup
   validate-patcher-args.sh        Shell injection prevention for patcher args
   check-doc-freshness.sh          Pre-commit doc sync reminder
+  pre-commit-test-reminder.sh     Context-aware test reminders on git commit
 scripts/
   BuddyPatcher/                   Swift binary patching engine (zero dependencies)
     Package.swift                 SPM manifest (Swift 5.9, macOS 13+)
     Sources/BuddyPatcher/        CLI entry point
     Sources/BuddyPatcherLib/     Library: patching, validation, backup, analysis
-    Tests/BuddyPatcherTests/     94 tests across 8 suites
+    Tests/BuddyPatcherTests/     178 tests across 12 files (incl. 3 regression)
+    Tests/Fixtures/               Golden files for CLI snapshot tests
   run-buddy-patcher.sh            Lazy-build wrapper (compiles on first use)
   cache-clean.sh                  Cache cleanup utility
+  lint.sh                         Local lint (shellcheck, JSON, frontmatter, hygiene)
+  test-smoke.sh                   Smoke tier: build sanity + CLI contract (<30s)
   test-security.sh                Security validation test suite
-skills/                           12 slash commands (see tables below)
+  test-snapshots.sh               Golden file comparison for CLI output
+  test-docs.sh                    Documentation path + link + count consistency
+  test-compatibility.sh           knownVarMaps validation (on-demand)
+  test-perf.sh                    Performance benchmarks (on-demand)
+  coverage.sh                     Local HTML coverage report
+skills/                           13 slash commands (see tables below)
 ```
 
 </details>
@@ -453,7 +462,8 @@ The plugin ships 12 skills, 5 agents, and 5 hooks:
 
 | Skill | Description |
 |-------|-------------|
-| `/run-tests` | Run Swift test suite (94 tests, 8 suites) with per-suite reporting |
+| `/run-tests` | Run Swift test suite (178 tests across 12 files) with per-suite reporting |
+| `/run-all-tests` | Run the full 8-tier pipeline via `test-all.sh` with per-tier summary table |
 | `/cache-clean` | Interactive cache management with dry-run preview |
 | `/token-review` | 5-phase context footprint audit with optimization recommendations |
 | `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
@@ -538,7 +548,7 @@ cd buddy-evolver
 # Build the Swift patcher (requires Xcode CLT with Swift 5.9+)
 make build
 
-# Run unit tests (94 tests, 8 suites)
+# Run unit tests (178 tests across 12 files)
 make test
 
 # Run security validation tests
@@ -559,27 +569,34 @@ Run `make help` to see all available targets.
 
 ## 🧪 Testing
 
-**94 unit tests** across 8 suites validate every component:
+**178 unit tests** across 12 files validate every component:
 
 | Suite | What It Tests |
 |-------|--------------|
+| `AnalyzeTests` | `--analyze` mode binary introspection |
 | `ArgumentParsingTests` | CLI flag parsing, unknown flag rejection |
+| `BackupRestoreTests` | Backup creation, SHA-256 verification, restore |
 | `BinaryDiscoveryTests` | Symlink resolution, error handling |
 | `ByteUtilsTests` | Pattern search correctness, edge cases |
 | `MetadataTests` | JSON serialization, file I/O |
+| `OrchestrationTests` | End-to-end pipeline composition |
 | `PatchEngineTests` | Species, rarity, shiny, art patching + idempotency |
 | `PatchLengthInvariantTests` | **Byte-length equality** — the critical invariant |
+| `RegressionTests` | One test per previously-fixed bug |
 | `SoulPatcherTests` | `~/.claude.json` updates, missing file handling |
+| `ValidationTests` | Input validation (emoji, name, personality, stats, binary) |
 | `VariableMapDetectionTests` | Anchor detection, version compatibility |
 
-**Security tests** (`scripts/test-security.sh`) validate input rejection at both Swift and hook layers.
+**303 automated tests** across 8 tiers: smoke (13) + unit (178) + security (27) + integration (23) + functional (19) + UI (23) + snapshots (6) + docs (14). Plus 34 on-demand tests (27 compat + 7 perf). See [`CLAUDE.md`](CLAUDE.md) for the full testing architecture.
 
-**CI** runs on every push/PR to `main` via GitHub Actions (macOS 14): build, unit tests, and security tests. Runs are cached via SPM build artifacts.
+**CI** is local-first: `ci-quality.yml` runs on Ubuntu for every PR (shellcheck, JSON/YAML validation, hygiene checks). macOS-dependent tests run on contributor machines via `scripts/test-all.sh && scripts/upload-test-results.sh`; `ci-verify-local.yml` blocks merge until the upload appears and passes.
 
 Run everything locally:
 
 ```bash
-swift test --package-path scripts/BuddyPatcher && bash scripts/test-security.sh
+make test-all                   # all 8 tiers, emits test-results/results.json
+scripts/upload-test-results.sh  # publish as GitHub Check Run on this commit
+make coverage                   # local HTML coverage report → test-results/coverage/index.html
 ```
 
 ---

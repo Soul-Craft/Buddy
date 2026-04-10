@@ -96,7 +96,7 @@ Compatibility: $compat
 Cache: $build_count .build dir(s)
 
 Dev Skills:
-  /run-tests         Run Swift test suite (94 tests) — after modifying Swift code
+  /run-tests         Run Swift test suite (175 tests) — after modifying Swift code
   /test-patch        Verify binary compatibility via dry-run — after Claude Code updates
   /security-audit    Binary integrity, backups, codesign, permissions — after security changes
   /token-review      Context footprint audit — after modifying skills or configs

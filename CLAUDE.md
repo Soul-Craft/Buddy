@@ -13,6 +13,7 @@ hooks/hooks.json                 Plugin hooks (SessionStart + PreToolUse)
 hooks/session-start.sh           SessionStart hook: injects dev context
 hooks/validate-patcher-args.sh   Security hook: validates patcher arguments
 hooks/check-doc-freshness.sh     Pre-commit doc freshness check
+hooks/pre-commit-test-reminder.sh Context-aware test reminders on git commit
 agents/security-reviewer.md      Security review agent for Swift code changes
 agents/test-runner.md            Test execution agent for Swift suite
 skills/buddy-evolve/             Evolution skill (/buddy-evolve)
@@ -20,6 +21,7 @@ skills/buddy-reset/              Reset skill (/buddy-reset)
 skills/buddy-status/             Buddy card display (/buddy-status)
 skills/test-patch/               Dry-run validation (/test-patch)
 skills/run-tests/                Swift test runner (/run-tests)
+skills/run-all-tests/            Full pipeline runner (/run-all-tests)
 skills/security-audit/           Security posture audit (/security-audit)
 skills/update-species-map/       Binary version maintenance (/update-species-map)
 skills/cache-clean/              Cache management skill (/cache-clean)
@@ -28,14 +30,23 @@ skills/sync-docs/                Documentation sync (/sync-docs)
 skills/start-session/            Dev session context (/start-session)
 skills/end-session/              Dev session wrap-up (/end-session)
 scripts/BuddyPatcher/            Binary patching engine (Swift, CryptoKit only)
-scripts/BuddyPatcher/Tests/      Unit test suite (175 tests, 11 suites)
+scripts/BuddyPatcher/Tests/      Unit test suite (178 tests across 12 files)
+scripts/BuddyPatcher/Tests/Fixtures/  Golden files for CLI snapshot tests
 scripts/run-buddy-patcher.sh     Lazy-build wrapper (compiles Swift on first use)
 scripts/cache-clean.sh           Cache cleanup script (used by hook + skill)
 scripts/build-test-binary.sh     Compiles a synthetic Mach-O with embedded patch patterns
+scripts/lint.sh                  Local lint (shellcheck, JSON, frontmatter, hygiene)
+scripts/test-smoke.sh            Smoke tier: build sanity + CLI contract (<30s, 13 tests)
 scripts/test-security.sh         Security validation test suite (27 tests)
 scripts/test-integration.sh      End-to-end patch/restore/metadata flows (23 tests)
 scripts/test-functional.sh       Byte-level patch correctness + Mach-O validity (19 tests)
 scripts/test-ui.sh               Buddy card rendering against fixtures (23 tests)
+scripts/test-snapshots.sh        Golden file comparison for CLI output (6 tests)
+scripts/test-docs.sh             Documentation path + link + count consistency (14 tests)
+scripts/test-compatibility.sh    Compatibility validation against knownVarMaps (~27 tests, on-demand)
+scripts/test-perf.sh             Performance benchmarks (7 benchmarks, on-demand)
+scripts/coverage.sh              Local HTML coverage report (test-results/coverage/)
+scripts/BuddyPatcher/Tests/BuddyPatcherTests/RegressionTests.swift  One test per fixed bug (3 tests)
 scripts/test-ui-renderer.py      Standalone Python renderer (reference for /buddy-status)
 scripts/test-visual-smoke.sh     Manual pre-release visual check (interactive)
 scripts/test-all.sh              Master runner — all tiers, JSON/JUnit output
@@ -117,19 +128,29 @@ All user-provided inputs are validated before any write operation:
 
 ## Testing
 
-267 automated tests across 5 tiers, plus an interactive visual smoke test. The critical design decision: **macOS-dependent tests run locally on the contributor's machine, NOT in GitHub Actions.** GitHub runners only run cheap Ubuntu-based quality checks. This keeps CI costs bounded while still enforcing test passage on every PR.
+300 automated tests in `test-all.sh` (8 tiers) + 34 on-demand tests, plus an interactive visual smoke test. The critical design decision: **macOS-dependent tests run locally on the contributor's machine, NOT in GitHub Actions.** GitHub runners only run cheap Ubuntu-based quality checks. This keeps CI costs bounded while still enforcing test passage on every PR.
 
-### The 5 automated tiers
+### The 8 automated tiers (run via `test-all.sh`)
 
-| Tier | Script | Tests | Purpose |
-|------|--------|-------|---------|
-| Unit | `swift test` | 175 | Swift XCTest suite — pure functions, validation, patch engine, orchestration |
-| Security | `scripts/test-security.sh` | 27 | Input validation, hook enforcement, injection checks |
-| Integration | `scripts/test-integration.sh` | 23 | End-to-end patch/restore/metadata flows against a synthetic binary |
-| Functional | `scripts/test-functional.sh` | 19 | Byte-level patch verification + Mach-O validity + codesign |
-| UI | `scripts/test-ui.sh` | 23 | Buddy card rendering against pinned JSON fixtures |
+| Tier | Script | Tests | Stage | Purpose |
+|------|--------|-------|-------|---------|
+| Smoke | `scripts/test-smoke.sh` | 13 | smoke | Build sanity + CLI contract (<30s) |
+| Unit | `swift test` | 178 | core | Swift XCTest suite — pure functions, validation, patch engine, orchestration, regressions |
+| Security | `scripts/test-security.sh` | 27 | core | Input validation, hook enforcement, injection checks |
+| Integration | `scripts/test-integration.sh` | 23 | real-world | End-to-end patch/restore/metadata flows against a synthetic binary |
+| Functional | `scripts/test-functional.sh` | 19 | real-world | Byte-level patch verification + Mach-O validity + codesign |
+| UI | `scripts/test-ui.sh` | 23 | real-world | Buddy card rendering against pinned JSON fixtures |
+| Snapshots | `scripts/test-snapshots.sh` | 6 | full-system | Golden file comparison for CLI output |
+| Docs | `scripts/test-docs.sh` | 14 | peripheral | Documentation path + link + count consistency |
 
-Run everything: `scripts/test-all.sh` — emits `test-results/results.json`, `test-results/junit.xml`, and `test-results/full-output.log`.
+### On-demand suites (not in `test-all.sh`)
+
+| Suite | Script | Tests | Purpose |
+|-------|--------|-------|---------|
+| Compatibility | `scripts/test-compatibility.sh` | ~27 | Verify knownVarMaps entries still work against current test binary |
+| Performance | `scripts/test-perf.sh` | 7 | Timing benchmarks — catches catastrophic regressions only |
+
+Run everything: `scripts/test-all.sh` — emits `test-results/results.json`, `test-results/junit.xml`, and `test-results/full-output.log`. Local HTML coverage report: `make coverage` → `test-results/coverage/index.html`.
 
 ### Visual smoke test
 
@@ -145,11 +166,12 @@ Swift tests that touch the filesystem use `resolvedHome` (in `Paths.swift`) whic
 
 ### CI architecture
 
-Three workflows in `.github/workflows/`:
+Four workflows in `.github/workflows/`:
 
 - **`ci-quality.yml`** (Ubuntu, runs on every push/PR) — shellcheck, JSON/YAML validation, skill frontmatter checks, repo hygiene (no `.build/`, no `.DS_Store`), doc-sync validation. Fast, deterministic, cheap.
 - **`ci-verify-local.yml`** (Ubuntu, runs on every PR) — queries the GitHub Checks API for a `Local Tests (macOS)` Check Run on the head commit. If missing or failed, posts a sticky PR comment telling the contributor to run `scripts/test-all.sh && scripts/upload-test-results.sh`.
 - **`ci-macos-fallback.yml`** (macOS-14, manual only via `workflow_dispatch` or `v*` tag push) — escape hatch for contributors without macOS access. Runs the full `test-all.sh` suite and uploads artifacts. Not part of default CI because macOS runners are expensive.
+- **`release.yml`** — triggered on `v*` tag pushes to package and publish releases.
 
 ### Local → GitHub bridge
 
@@ -192,7 +214,7 @@ A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls. If the comma
 
 ### Hook: pre-commit test reminder
 
-A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls containing `git commit`. Injects a system message reminding to run `swift test` before committing Swift code changes.
+A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls containing `git commit`. Delegates to `hooks/pre-commit-test-reminder.sh`, which inspects staged files and injects context-aware reminders: `make test` for Swift changes, `make test-security` for security-sensitive code, `make lint` for shell scripts, `make test-docs` for documentation, `make test-compat` for patch pattern changes, and `make test-snapshots` if CLI output files were modified.
 
 ### Hook: doc freshness check
 
@@ -220,7 +242,11 @@ Investigates the binary when patterns break. Uses `--analyze` mode to search for
 
 ### Skill: /run-tests
 
-Runs `swift test` in `scripts/BuddyPatcher/`, parses results per suite (11 suites, 175 tests), and reports a pass/fail scorecard. Non-conversational (`disable-model-invocation: true`).
+Runs `swift test` in `scripts/BuddyPatcher/`, parses results per suite (12 files, 178 tests), and reports a pass/fail scorecard. Non-conversational (`disable-model-invocation: true`).
+
+### Skill: /run-all-tests
+
+Runs the full 8-tier test pipeline via `scripts/test-all.sh`, reads `test-results/results.json`, and reports a per-tier summary table grouped by stage (smoke → core → real-world → full-system → peripheral). On failure, suggests the appropriate follow-up skill or command for each tier type. Non-conversational (`disable-model-invocation: true`).
 
 ### Skill: /token-review
 
@@ -279,5 +305,5 @@ scripts/BuddyPatcher/
     Metadata.swift               saveMetadata(), loadMetadata()
     Orchestration.swift          Pure pipeline: runPatchPipeline(), hasPatchWork()
     Paths.swift                  resolvedHome — BUDDY_HOME override for test isolation
-  Tests/BuddyPatcherTests/       175 tests across 11 suites
+  Tests/BuddyPatcherTests/       178 tests across 12 files
 ```
