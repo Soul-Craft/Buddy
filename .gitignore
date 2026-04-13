@@ -6,3 +6,16 @@ scripts/BuddyPatcher/.build/
 # Test infrastructure output
 test-results/
 scripts/BuddyPatcher/.testrun/
+
+# Local/machine-specific config (never commit)
+*.local.*
+.env
+.env.*
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Credential files (safety net)
+credentials*
+*.pem
+*.key
