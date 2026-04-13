@@ -3,44 +3,28 @@ import XCTest
 
 final class OrchestrationTests: XCTestCase {
 
-    let v90 = knownVarMaps[0]
+    var tempDir: URL!
 
-    // Build a synthetic binary that contains all patchable patterns.
-    private func fullSyntheticBinary() -> [UInt8] {
-        let speciesArray = buildSpeciesArray(v90)
-        let rarity = buildRarityString()
-        let shiny = buildShinyThreshold()
-        // Art block for duck (first species) + end marker pointing at goose (next species)
-        let artDuck = buildArtBlock(targetVar: v90["duck"]!, varMap: v90)
-        let artEnd = buildArtEndMarker(v90["goose"]!)
-        return syntheticBinary(with: [speciesArray, rarity, shiny, artDuck, artEnd])
+    override func setUp() {
+        super.setUp()
+        tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("OrchestrationTests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: tempDir)
+        super.tearDown()
+    }
+
+    private func configPath() -> URL { tempDir.appendingPathComponent(".claude.json") }
+    private func metaPath() -> URL { tempDir.appendingPathComponent("buddy-patch-meta.json") }
+
+    private func writeConfig(_ json: String) {
+        try! json.data(using: .utf8)!.write(to: configPath())
     }
 
     // MARK: - hasPatchWork
-
-    func testHasPatchWorkDetectsSpecies() {
-        var opts = Options()
-        opts.species = "penguin"
-        XCTAssertTrue(hasPatchWork(opts))
-    }
-
-    func testHasPatchWorkDetectsRarity() {
-        var opts = Options()
-        opts.rarity = "legendary"
-        XCTAssertTrue(hasPatchWork(opts))
-    }
-
-    func testHasPatchWorkDetectsShiny() {
-        var opts = Options()
-        opts.shiny = true
-        XCTAssertTrue(hasPatchWork(opts))
-    }
-
-    func testHasPatchWorkDetectsNoShiny() {
-        var opts = Options()
-        opts.noShiny = true
-        XCTAssertTrue(hasPatchWork(opts))
-    }
 
     func testHasPatchWorkDetectsName() {
         var opts = Options()
@@ -54,15 +38,39 @@ final class OrchestrationTests: XCTestCase {
         XCTAssertTrue(hasPatchWork(opts))
     }
 
-    func testHasPatchWorkDetectsStats() {
+    func testHasPatchWorkDetectsMetaSpecies() {
         var opts = Options()
-        opts.stats = "{\"debugging\":50}"
+        opts.metaSpecies = "penguin"
         XCTAssertTrue(hasPatchWork(opts))
     }
 
-    func testHasPatchWorkDetectsEmoji() {
+    func testHasPatchWorkDetectsMetaRarity() {
         var opts = Options()
-        opts.emoji = "🔥"
+        opts.metaRarity = "legendary"
+        XCTAssertTrue(hasPatchWork(opts))
+    }
+
+    func testHasPatchWorkDetectsMetaShiny() {
+        var opts = Options()
+        opts.metaShiny = true
+        XCTAssertTrue(hasPatchWork(opts))
+    }
+
+    func testHasPatchWorkDetectsMetaNoShiny() {
+        var opts = Options()
+        opts.metaNoShiny = true
+        XCTAssertTrue(hasPatchWork(opts))
+    }
+
+    func testHasPatchWorkDetectsMetaEmoji() {
+        var opts = Options()
+        opts.metaEmoji = "🔥"
+        XCTAssertTrue(hasPatchWork(opts))
+    }
+
+    func testHasPatchWorkDetectsMetaStats() {
+        var opts = Options()
+        opts.metaStats = "{\"debugging\":50}"
         XCTAssertTrue(hasPatchWork(opts))
     }
 
@@ -71,127 +79,88 @@ final class OrchestrationTests: XCTestCase {
         XCTAssertFalse(hasPatchWork(opts))
     }
 
-    func testHasPatchWorkFalseForAnalyzeOnly() {
+    // MARK: - runSoulPipeline — soul writes
+
+    func testPipelineWritesSoul() {
+        writeConfig("{\"companion\":{}}")
         var opts = Options()
-        opts.analyze = true
-        // --analyze by itself is not "patch work" — the pipeline shouldn't run
-        XCTAssertFalse(hasPatchWork(opts))
+        opts.name = "Aethos"
+        opts.personality = "wise"
+
+        let result = runSoulPipeline(opts: opts, configPath: configPath(), metaPath: metaPath())
+
+        XCTAssertTrue(result.soulWritten)
+        XCTAssertTrue(result.warnings.isEmpty)
+
+        let data = try! Data(contentsOf: configPath())
+        let config = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let companion = config["companion"] as! [String: Any]
+        XCTAssertEqual(companion["name"] as? String, "Aethos")
+        XCTAssertEqual(companion["personality"] as? String, "wise")
     }
 
-    // MARK: - runPatchPipeline — full application
-
-    func testPipelineAppliesAllBinaryPatches() {
-        let data = fullSyntheticBinary()
+    func testPipelineWritesMetadata() {
+        writeConfig("{\"companion\":{}}")
         var opts = Options()
-        opts.species = "penguin"
-        opts.rarity = "legendary"
-        opts.shiny = true
-        opts.emoji = "🔥"
+        opts.metaSpecies = "dragon"
+        opts.metaRarity = "legendary"
+        opts.metaShiny = true
 
-        let result = runPatchPipeline(data: data, opts: opts)
+        let result = runSoulPipeline(opts: opts, configPath: configPath(), metaPath: metaPath())
 
-        XCTAssertGreaterThan(result.totalPatches, 0)
-        XCTAssertEqual(result.patchedData.count, data.count, "Pipeline must preserve byte length")
-        XCTAssertTrue(result.warnings.isEmpty, "No warnings expected for fully-specified patch")
+        XCTAssertTrue(result.metadataWritten)
+        XCTAssertTrue(result.warnings.isEmpty)
 
-        // Verify species patch landed: penguin var (NL_) should appear
-        let penguinVar = utf8Bytes(v90["penguin"]!)
-        XCTAssertGreaterThan(findAll(in: result.patchedData, pattern: penguinVar).count, 0)
-
-        // Verify shiny patch landed: "H()<1.01" should now exist
-        XCTAssertNotNil(findFirst(in: result.patchedData, pattern: utf8Bytes("H()<1.01")))
+        let meta = loadMetadata(metaPath: metaPath())
+        XCTAssertNotNil(meta)
+        XCTAssertEqual(meta?["species"] as? String, "dragon")
+        XCTAssertEqual(meta?["rarity"] as? String, "legendary")
+        XCTAssertEqual(meta?["shiny"] as? Bool, true)
+        XCTAssertEqual(meta?["schema_version"] as? Int, 2)
     }
 
-    // MARK: - runPatchPipeline — warnings
-
-    func testPipelineWarnsWhenEmojiWithoutSpecies() {
-        let data = fullSyntheticBinary()
+    func testPipelineWarnsWhenSoulWriteFails() {
+        // configPath doesn't exist → patchSoul returns false → warning recorded
         var opts = Options()
-        opts.emoji = "🔥"
-        // No species set
+        opts.name = "Test"
 
-        let result = runPatchPipeline(data: data, opts: opts)
+        let result = runSoulPipeline(opts: opts, configPath: configPath(), metaPath: metaPath())
 
-        XCTAssertTrue(
-            result.warnings.contains { $0.contains("--emoji requires --species") },
-            "Should warn when --emoji is given without --species"
-        )
+        XCTAssertFalse(result.soulWritten)
+        XCTAssertTrue(result.warnings.contains { $0.contains("Soul write failed") })
     }
 
-    func testPipelineWarnsWhenNoAnchorMatches() {
-        // A buffer that contains NONE of the known anchors
-        let data: [UInt8] = [UInt8](repeating: 0x42, count: 500)
-        var opts = Options()
-        opts.species = "penguin"
+    func testPipelineNoOpWhenNoWork() {
+        let opts = Options()
+        let result = runSoulPipeline(opts: opts, configPath: configPath(), metaPath: metaPath())
 
-        let result = runPatchPipeline(data: data, opts: opts)
-
-        // Single consolidated warning instead of per-patch warnings
-        XCTAssertTrue(
-            result.warnings.contains { $0.contains("No matching anchor found") },
-            "Should warn once when no known anchor is found"
-        )
-        XCTAssertEqual(result.warnings.count, 1, "Should emit exactly one warning")
-        // Returns 0 patches — pipeline short-circuits on anchor miss
-        XCTAssertEqual(result.totalPatches, 0)
-        // Fallback is still the newest var map
-        XCTAssertEqual(result.varMap["duck"], knownVarMaps[0]["duck"])
+        XCTAssertFalse(result.soulWritten)
+        XCTAssertFalse(result.metadataWritten)
+        XCTAssertTrue(result.warnings.isEmpty)
     }
-
-    // MARK: - runPatchPipeline — precedence
 
     func testPipelineShinyPrecedesNoShiny() {
-        let data = fullSyntheticBinary()
+        writeConfig("{\"companion\":{}}")
         var opts = Options()
-        opts.shiny = true
-        opts.noShiny = true  // conflicting — shiny should win
+        opts.metaShiny = true
+        opts.metaNoShiny = true  // metaShiny wins
 
-        let result = runPatchPipeline(data: data, opts: opts)
+        let result = runSoulPipeline(opts: opts, configPath: configPath(), metaPath: metaPath())
 
-        // After a "shiny" patch the threshold becomes "H()<1.01"
-        XCTAssertNotNil(findFirst(in: result.patchedData, pattern: utf8Bytes("H()<1.01")))
-        // Original "H()<0.01" is gone
-        XCTAssertNil(findFirst(in: result.patchedData, pattern: utf8Bytes("H()<0.01")))
+        XCTAssertTrue(result.metadataWritten)
+        let meta = loadMetadata(metaPath: metaPath())
+        XCTAssertEqual(meta?["shiny"] as? Bool, true, "metaShiny should take precedence over metaNoShiny")
     }
 
-    // MARK: - runPatchPipeline — byte invariant
-
-    func testPipelinePreservesLengthAcrossAllPatches() {
-        let data = fullSyntheticBinary()
-        let originalLen = data.count
-
+    func testPipelineSchemaVersionIsTwo() {
+        writeConfig("{\"companion\":{}}")
         var opts = Options()
-        opts.species = "dragon"
-        opts.rarity = "epic"
-        opts.shiny = true
-        opts.emoji = "🔥"
+        opts.name = "Buddy"
 
-        let result = runPatchPipeline(data: data, opts: opts)
-        XCTAssertEqual(result.patchedData.count, originalLen,
-                       "Byte-length invariant must hold for every combination of patches")
-    }
+        let result = runSoulPipeline(opts: opts, configPath: configPath(), metaPath: metaPath())
 
-    // MARK: - runPatchPipeline — no-op
-
-    func testPipelineNoOpWhenNoOptsSet() {
-        let data = fullSyntheticBinary()
-        let opts = Options()
-
-        let result = runPatchPipeline(data: data, opts: opts)
-
-        XCTAssertEqual(result.totalPatches, 0)
-        XCTAssertEqual(result.patchedData, data, "Data must be unchanged when no patch work is requested")
-    }
-
-    func testPipelineDetectsVarMapFromRealAnchor() {
-        let data = fullSyntheticBinary()
-        var opts = Options()
-        opts.species = "cat"
-
-        let result = runPatchPipeline(data: data, opts: opts)
-
-        // Detected var map must be the v90 map (that's what we built the binary with)
-        XCTAssertEqual(result.varMap["duck"], v90["duck"])
-        XCTAssertEqual(result.anchor, anchorForMap(v90))
+        XCTAssertTrue(result.metadataWritten)
+        let meta = loadMetadata(metaPath: metaPath())
+        XCTAssertEqual(meta?["schema_version"] as? Int, 2)
     }
 }

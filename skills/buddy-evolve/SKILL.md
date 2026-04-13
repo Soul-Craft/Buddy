@@ -8,27 +8,15 @@ argument-hint: "species name (optional)"
 
 Transform the user's Claude Code Buddy terminal pet through an interactive evolution experience.
 
-**The default path is 2 picks:** choose an Evolution Pack, optionally name it, and watch the animation. Power users can pick **"🎨 Build My Own"** to customize every detail.
-
-**Pack data lives in `references/evolution-packs.md`** — read that file once when you start so you have the 8 packs and their defaults loaded.
-
----
-
 ## Act 1 — Discovery
 
-Run pre-flight checks **silently** — capture output, don't echo it:
+Run pre-flight checks:
 
 ```bash
-BINARY=$(readlink ~/.local/bin/claude 2>/dev/null)
-CURRENT_NAME=$(plutil -extract companion.name raw -o - ~/.claude.json 2>/dev/null || echo "your buddy")
-CURRENT_SPECIES=$(plutil -extract companion.species raw -o - ~/.claude.json 2>/dev/null || echo "unknown")
-if [ -z "$BINARY" ] || [ ! -f "$BINARY" ]; then
-  echo "ERROR: Claude Code binary not found at ~/.local/bin/claude"
-  exit 1
-fi
+plutil -extract companion json -o - ~/.claude.json 2>/dev/null || echo "{}"
 ```
 
-Then display the discovery scene using the ASCII art matching the **current** species. Pick from the templates below and substitute `[NAME]` with `$CURRENT_NAME`.
+Read the current buddy name from the output. Then display the discovery scene — the current buddy encountering a mysterious mushroom. Use the buddy's actual name and match the ASCII art to the current species from metadata if available:
 
 **Species ASCII Art (use the one matching the current species):**
 
@@ -74,144 +62,122 @@ capybara:
    '------'
 ```
 
-For any other species, use a simple emoji representation:
-```
-      [emoji]     🍄 ?
-```
+For any other species, use a simple `[emoji]` representation.
 
-Display the scene:
+Display:
 ```
-🍄 A WILD MUSHROOM APPEARED!
+Your buddy [NAME] waddles up curiously...
 
 [species ASCII art from above]
 
-[NAME] sniffs the mushroom curiously...
-Something magical is about to happen! ✨
+[NAME] found a mysterious mushroom!
+What will [NAME] evolve into?
 ```
 
----
+## Act 2 — Choices
 
-## Act 2 — Pick a Pack
+Gather all customization choices. Use AskUserQuestion for structured selections and direct conversation for freeform inputs.
 
-**One AskUserQuestion, ten options.** This is the primary path — most users never go beyond here.
-
+### Step 1: Species
 Use AskUserQuestion:
-- header: "Evolution Pack"
-- question: "Who should [NAME] become?"
-- options (in this order):
-  1. label: "🐉 Golden Dragon", description: "Rare & radiant"
-  2. label: "🌈 Rainbow Axolotl", description: "Happy & silly"
-  3. label: "👻 Spooky Ghost", description: "Mysterious & mischievous"
-  4. label: "🦫 Chill Capybara", description: "Zen master vibes"
-  5. label: "🐙 Smart Octopus", description: "Galaxy brain"
-  6. label: "🤖 Cool Robot", description: "Logical & snarky"
-  7. label: "🦉 Wise Owl", description: "Knows everything"
-  8. label: "🐱 Sneaky Cat", description: "Clever & chaotic"
-  9. label: "🎲 Surprise Me!", description: "Pick a random pack"
-  10. label: "🎨 Build My Own", description: "Custom evolution (advanced)"
+- header: "Species"
+- question: "What species should your buddy evolve into?"
+- options (pick 4 most popular, user can type Other for full list):
+  - "dragon" with description "Fearsome fire-breather"
+  - "cat" with description "Mysterious and independent"
+  - "axolotl" with description "Adorable regenerating amphibian"
+  - "capybara" with description "Chill vibes only"
 
-(AskUserQuestion supports up to ~10 options cleanly; if rendering caps at 4 visible, the "Other" fallback lets the user type any pack name.)
+If user picks Other, list all 18: duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara.
 
-### Pack data
+### Step 2: Rarity
+Use AskUserQuestion:
+- header: "Rarity"
+- question: "What rarity tier?"
+- options:
+  - "legendary" with description "The rarest of the rare (Recommended)"
+  - "epic" with description "Extremely rare"
+  - "rare" with description "Uncommon but special"
+  - "common" with description "Keep it humble"
 
-Read `references/evolution-packs.md` for the full pack table. Each pack bundles:
-- **species** (for `--species`)
-- **emoji** (for `--emoji`)
-- **default name** (for `--name`, user can override)
-- **personality** (for `--personality`)
-- **stats preset** + JSON (for `--stats`)
+### Step 3: Emoji
+Ask in conversation (freeform): "What emoji should represent your buddy? (e.g., 🐲, 🦄, 👻, 🍄, 🔥)"
 
-All packs use `--rarity legendary` and `--shiny`.
+### Step 4: Name
+Ask in conversation: "What should your evolved buddy be named?"
 
-### Handling the picks
+### Step 5: Personality
+Ask in conversation: "Describe your buddy's personality in a sentence or two. This appears as the italic description on the buddy card."
 
-**If a preset pack (options 1–8):** use its bundle as the base, then ask ONE follow-up:
+### Step 6: Stats
+Use AskUserQuestion:
+- header: "Stats"
+- question: "How should your buddy's stats be distributed?"
+- options:
+  - "All maxed (99)" with description "Every stat at maximum"
+  - "Chaos gremlin" with description "99 CHAOS, everything else low"
+  - "Zen master" with description "99 WISDOM and PATIENCE, moderate others"
+  - "Custom" with description "Set each stat individually"
 
-```
-Great pick! What should we call your new [species]?
-(Press Enter to use "[default_name]")
-```
-
-- If the user sends an empty reply, "default", "that's fine", or similar → use the pack's default name
-- Otherwise → use their input as the name
-
-**If "🎲 Surprise Me!":** pick a random pack from options 1–8, skip the name question, use the pack's default name. Mention which pack fate chose: "🎲 The dice rolled... **Golden Dragon!** 🐉"
-
-**If "🎨 Build My Own":** jump to the [Build My Own (Advanced)](#build-my-own-advanced) section below.
-
----
+If Custom, ask for each stat (DEBUGGING, PATIENCE, CHAOS, WISDOM, SNARK) as a number 0-99.
 
 ## Act 3 — The Evolution
 
-### Frame 1 — Bite (emit as one message, then `sleep 0.8`)
+Display a confirmation summary table, then the evolution animation.
 
+First show the summary:
 ```
-[NAME] takes a big bite of the mushroom... 🍄
-
-[current species ASCII art]
-
-*crunch crunch*
-```
-
-Then run:
-```bash
-sleep 0.8
+Evolution Summary:
+  Species:     [species] [emoji]
+  Rarity:      [rarity]
+  Shiny:       Yes ✨
+  Name:        [name]
+  Personality: [personality]
+  Stats:       DEBUGGING:[n] PATIENCE:[n] CHAOS:[n] WISDOM:[n] SNARK:[n]
 ```
 
-### Frame 2 — Glow (emit as one message)
+Then display the evolution using the **current** species ASCII art (before evolution):
 
+For axolotl:
 ```
-WHOA! [NAME] is starting to glow! ✨
+[OLD_NAME] eats the mushroom... 🍄
 
-[current species ASCII art with ✨ sparkles added around it]
+        (     )
+    }~(______)~{
+    }~(✨..✨)~{   ✨ ✨ ✨
+      ( .--. )    ✨ ✨
+       (_/  \_)
+
+Evolving...
 ```
 
-Now run the patcher. The patcher takes ~1–2s to run, which acts as the "big pause" in the animation:
+For other species, use the matching art from Act 1 with sparkles added. If species art isn't listed above, use the emoji with sparkles:
+```
+[OLD_NAME] eats the mushroom... 🍄
 
+    [emoji]    ✨ ✨ ✨
+               ✨ ✨
+
+Evolving...
+```
+
+Run the patching script:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" \
-  --species [species] \
-  --rarity legendary \
-  --shiny \
-  --emoji "[emoji]" \
+  --meta-species [species] \
+  --meta-rarity [rarity] \
+  --meta-shiny \
+  --meta-emoji "[emoji]" \
+  --meta-stats '[{"debugging":[n],"patience":[n],"chaos":[n],"wisdom":[n],"snark":[n]}]' \
   --name "[name]" \
-  --personality "[personality]" \
-  --stats '[stats_json]'
+  --personality "[personality]"
 ```
 
-All evolved buddies are shiny by default (always pass `--shiny`).
-
-### Frame 3 — Burst (emit as one message, then `sleep 0.8`)
-
-```
-     ✨ ✨ ✨ ✨ ✨
-   ✨             ✨
-  ✨    POOF!     ✨
-   ✨             ✨
-     ✨ ✨ ✨ ✨ ✨
-```
-
-Then run:
-```bash
-sleep 0.8
-```
-
-### Frame 4 — Ta-da! (emit as one message, lead into the reveal)
-
-```
-     ✨ TA-DA! ✨
-
-          [new_emoji]
-         [NEW_NAME]
-```
-
-Do not sleep after Frame 4 — proceed straight to Act 4.
-
----
+Note: always pass --meta-shiny since all evolved buddies are shiny by default.
 
 ## Act 4 — The Reveal
 
-Display the evolved buddy card:
+After the script succeeds, display the evolved buddy:
 
 ```
     ✨✨✨✨✨✨✨✨✨✨
@@ -220,11 +186,11 @@ Display the evolved buddy card:
     ✨                ✨
     ✨✨✨✨✨✨✨✨✨✨
 
-[OLD_NAME] evolved into [NEW_NAME]! 🎉
+[OLD_NAME] evolved into [NEW_NAME]!
 
 ★ LEGENDARY          [SPECIES]
 
-  [NEW_NAME]
+  [NAME]
   "[personality]"
 
   DEBUGGING  ████████████  [n]
@@ -234,124 +200,15 @@ Display the evolved buddy card:
   SNARK      ████████████  [n]
 ```
 
-Then tell the user (kid-friendly copy, no 🚨 or ⚠️):
-
+Then tell the user:
 ```
-🎉 Your new buddy is ready!
-
-To meet [NEW_NAME], restart Claude Code:
-   exit
-   claude
-
-Then run /buddy-status to say hi!
-
-Want your old buddy back? Run /buddy-reset
+Name and personality are live in Claude Code — no restart needed.
+Run /buddy-status to see your new buddy card.
+To revert at any time, run /buddy-reset.
 ```
-
----
-
-## Build My Own (Advanced)
-
-For users who picked "🎨 Build My Own" in Act 2. Four questions instead of six — still customizable, but trims the blank-page prompts that made the old flow painful.
-
-### Step 1: Species
-AskUserQuestion:
-- header: "Species"
-- question: "What species?"
-- options:
-  - "dragon" — "Fearsome fire-breather"
-  - "cat" — "Mysterious and independent"
-  - "axolotl" — "Regenerating amphibian"
-  - "capybara" — "Chill vibes only"
-
-If the user picks "Other", list all 18: duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara.
-
-### Step 2: Rarity
-AskUserQuestion:
-- header: "Rarity"
-- question: "What rarity tier?"
-- options:
-  - "legendary" — "The rarest of the rare (Recommended)"
-  - "epic" — "Extremely rare"
-  - "rare" — "Uncommon but special"
-  - "common" — "Keep it humble"
-
-### Step 3: Name
-Freeform: `What's their name? (Press Enter for "[smart_default]")`
-
-**Smart default by species** (from the pack roster where applicable):
-- dragon → Aurelius
-- axolotl → Sparkle
-- ghost → Boo
-- capybara → Mellow
-- octopus → Tako
-- robot → Bleep
-- owl → Sage
-- cat → Whiskers
-- duck → Ducky
-- goose → Honk
-- blob → Blobby
-- penguin → Tux
-- turtle → Shelly
-- snail → Slurp
-- mushroom → Shroomie
-- cactus → Spike
-- rabbit → Hop
-- chonk → Chonk
-
-Accept empty reply, "default", or "that's fine" as "use the smart default."
-
-### Step 4: Vibe
-AskUserQuestion:
-- header: "Vibe"
-- question: "What's their vibe?"
-- options:
-  - "Powerful hero" — "Brave & unstoppable (all stats 99)"
-  - "Chaos goblin" — "Pure mayhem (99 chaos, low rest)"
-  - "Wise elder" — "Has seen it all (99 wisdom + patience)"
-  - "Sassy sidekick" — "Always has a comeback (99 snark)"
-
-**Vibe → personality + stats mapping:**
-
-| Vibe | Personality | Stats JSON |
-|------|-------------|------------|
-| Powerful hero | Brave, bold, and unstoppable | `{"debugging":99,"patience":99,"chaos":99,"wisdom":99,"snark":99}` |
-| Chaos goblin | Causes adorable mayhem wherever they go | `{"debugging":20,"patience":20,"chaos":99,"wisdom":20,"snark":60}` |
-| Wise elder | Has seen it all, knows more than they say | `{"debugging":60,"patience":99,"chaos":10,"wisdom":99,"snark":40}` |
-| Sassy sidekick | Always has a comeback ready | `{"debugging":60,"patience":20,"chaos":99,"wisdom":50,"snark":80}` |
-
-If the user picks "Other" / wants to write their own:
-- Ask in conversation: "Describe their personality in a sentence or two."
-- Default to `{"debugging":99,"patience":99,"chaos":99,"wisdom":99,"snark":99}` for stats (all maxed).
-
-### Emoji auto-pick
-
-Emoji is auto-derived from the species using the pack-roster mapping:
-
-| Species | Emoji | | Species | Emoji |
-|---------|-------|---|---------|-------|
-| dragon | 🐉 | | duck | 🦆 |
-| axolotl | 🌈 | | goose | 🪿 |
-| ghost | 👻 | | blob | 🫠 |
-| capybara | 🦫 | | penguin | 🐧 |
-| octopus | 🐙 | | turtle | 🐢 |
-| robot | 🤖 | | snail | 🐌 |
-| owl | 🦉 | | mushroom | 🍄 |
-| cat | 🐱 | | cactus | 🌵 |
-| | | | rabbit | 🐇 |
-| | | | chonk | 🐖 |
-
-Use these without asking. If the user wants a different emoji, they can say so and you override.
-
-### Then continue to Act 3
-
-Once you have species + rarity + name + personality + stats + emoji, run the same Act 3 animation and Act 4 reveal as the pack flow.
-
----
 
 ## Error Handling
 
-If the patcher fails:
+If the script fails:
 - Display the error output
-- Suggest running `/buddy-reset` to revert
-- Note that binary offsets are version-specific — if Claude Code just updated, run `/test-patch` to check compatibility
+- Suggest running /buddy-reset to revert any partial soul write

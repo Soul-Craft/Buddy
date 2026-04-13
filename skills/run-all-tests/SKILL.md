@@ -34,16 +34,13 @@ Test Pipeline Results
   TIER              STATUS    PASSED      DURATION
   ────────────────  ──────    ────────    ─────────
   smoke             ✅        13/13       8s
-  unit              ✅        178/178     12s
-  security          ✅        27/27       3s
-  integration       ✅        23/23       6s
-  functional        ✅        19/19       5s
+  unit              ✅        98/98       12s
+  security          ✅        25/25       3s
   ui                ✅        23/23       2s
-  e2e               ✅        23/23       2s
   snapshots         ✅        6/6         1s
   docs              ✅        16/16       1s
   ──────────────────────────────────────────────────────
-  TOTAL             ✅        328/328     40s
+  TOTAL             ✅        181/181     27s
 ```
 
 ### 4. On failure
@@ -52,7 +49,6 @@ If any tier has `exit_code != 0`, show which tier failed and suggest:
 
 - **smoke failure** → build or CLI contract broken; check `swift build` output
 - **unit failure** → run `/run-tests` to see per-suite breakdown with failure details
-- **security failure** → `make test-security` — run standalone for focused output
-- **snapshots failure** → if CLI output changed intentionally, run `UPDATE_GOLDEN=1 make test-snapshots` to regenerate golden files; review diffs before committing
+- **security failure** → `bash scripts/test-security.sh` — run standalone for focused output
+- **snapshots failure** → if CLI output changed intentionally, run `UPDATE_GOLDEN=1 bash scripts/test-snapshots.sh` to regenerate golden files; review diffs before committing
 - **docs failure** → run `/sync-docs` to fix documentation drift
-- **compat failure** (on-demand) → run `/test-patch` to diagnose anchor pattern issues; run `/update-species-map` if variable names changed

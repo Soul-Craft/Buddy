@@ -22,9 +22,7 @@ final class MetadataTests: XCTestCase {
     }
 
     func testSaveAndLoadRoundTrip() {
-        let binaryPath = URL(fileURLWithPath: "/fake/path/2.1.90")
         saveMetadata(
-            binaryPath: binaryPath,
             species: "penguin",
             rarity: "legendary",
             shiny: true,
@@ -43,13 +41,25 @@ final class MetadataTests: XCTestCase {
         XCTAssertEqual(loaded?["emoji"] as? String, "🐧")
         XCTAssertEqual(loaded?["name"] as? String, "Aethos")
         XCTAssertEqual(loaded?["personality"] as? String, "wise")
-        XCTAssertEqual(loaded?["version"] as? String, "2.1.90")
+    }
+
+    func testSchemaVersion() {
+        saveMetadata(
+            species: "duck",
+            rarity: nil,
+            shiny: false,
+            emoji: nil,
+            name: nil,
+            personality: nil,
+            stats: nil,
+            metaPath: metaPath()
+        )
+        let loaded = loadMetadata(metaPath: metaPath())
+        XCTAssertEqual(loaded?["schema_version"] as? Int, 2)
     }
 
     func testSavePartialFields() {
-        let binaryPath = URL(fileURLWithPath: "/fake/path/2.1.90")
         saveMetadata(
-            binaryPath: binaryPath,
             species: "duck",
             rarity: nil,
             shiny: false,
@@ -76,5 +86,28 @@ final class MetadataTests: XCTestCase {
         try! "not json".data(using: .utf8)!.write(to: metaPath())
         let loaded = loadMetadata(metaPath: metaPath())
         XCTAssertNil(loaded)
+    }
+
+    func testRemoveMetadata() {
+        saveMetadata(
+            species: "cat",
+            rarity: nil,
+            shiny: false,
+            emoji: nil,
+            name: nil,
+            personality: nil,
+            stats: nil,
+            metaPath: metaPath()
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: metaPath().path))
+
+        removeMetadata(metaPath: metaPath())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: metaPath().path))
+    }
+
+    func testRemoveMetadataIsIdempotent() {
+        // Should not crash when called on a nonexistent path
+        removeMetadata(metaPath: metaPath())
+        removeMetadata(metaPath: metaPath())
     }
 }

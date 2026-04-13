@@ -3,32 +3,7 @@ import XCTest
 
 final class ArgumentParsingTests: XCTestCase {
 
-    // MARK: - Valid flags
-
-    func testParseSpecies() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--species", "penguin"])
-        XCTAssertEqual(opts.species, "penguin")
-    }
-
-    func testParseRarity() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--rarity", "legendary"])
-        XCTAssertEqual(opts.rarity, "legendary")
-    }
-
-    func testParseShiny() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--shiny"])
-        XCTAssertTrue(opts.shiny)
-    }
-
-    func testParseNoShiny() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--no-shiny"])
-        XCTAssertTrue(opts.noShiny)
-    }
-
-    func testParseEmoji() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--emoji", "🍄"])
-        XCTAssertEqual(opts.emoji, "🍄")
-    }
+    // MARK: - Soul flags
 
     func testParseName() throws {
         let opts = try parseArgs(from: ["buddy-patcher", "--name", "Aethos"])
@@ -40,11 +15,40 @@ final class ArgumentParsingTests: XCTestCase {
         XCTAssertEqual(opts.personality, "a wise old penguin")
     }
 
-    func testParseStats() throws {
-        let json = "{\"debugging\":99}"
-        let opts = try parseArgs(from: ["buddy-patcher", "--stats", json])
-        XCTAssertEqual(opts.stats, json)
+    // MARK: - Card metadata flags
+
+    func testParseMetaSpecies() throws {
+        let opts = try parseArgs(from: ["buddy-patcher", "--meta-species", "penguin"])
+        XCTAssertEqual(opts.metaSpecies, "penguin")
     }
+
+    func testParseMetaRarity() throws {
+        let opts = try parseArgs(from: ["buddy-patcher", "--meta-rarity", "legendary"])
+        XCTAssertEqual(opts.metaRarity, "legendary")
+    }
+
+    func testParseMetaShiny() throws {
+        let opts = try parseArgs(from: ["buddy-patcher", "--meta-shiny"])
+        XCTAssertTrue(opts.metaShiny)
+    }
+
+    func testParseMetaNoShiny() throws {
+        let opts = try parseArgs(from: ["buddy-patcher", "--meta-no-shiny"])
+        XCTAssertTrue(opts.metaNoShiny)
+    }
+
+    func testParseMetaEmoji() throws {
+        let opts = try parseArgs(from: ["buddy-patcher", "--meta-emoji", "🍄"])
+        XCTAssertEqual(opts.metaEmoji, "🍄")
+    }
+
+    func testParseMetaStats() throws {
+        let json = "{\"debugging\":99}"
+        let opts = try parseArgs(from: ["buddy-patcher", "--meta-stats", json])
+        XCTAssertEqual(opts.metaStats, json)
+    }
+
+    // MARK: - Control flags
 
     func testParseRestore() throws {
         let opts = try parseArgs(from: ["buddy-patcher", "--restore"])
@@ -56,14 +60,9 @@ final class ArgumentParsingTests: XCTestCase {
         XCTAssertTrue(opts.dryRun)
     }
 
-    func testParseBinary() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--binary", "/tmp/test"])
-        XCTAssertEqual(opts.binary, "/tmp/test")
-    }
-
-    func testParseAnalyze() throws {
-        let opts = try parseArgs(from: ["buddy-patcher", "--analyze"])
-        XCTAssertTrue(opts.analyze)
+    func testParseVersion() throws {
+        let opts = try parseArgs(from: ["buddy-patcher", "--version"])
+        XCTAssertTrue(opts.showVersion)
     }
 
     func testParseHelp() throws {
@@ -81,65 +80,75 @@ final class ArgumentParsingTests: XCTestCase {
     func testParseCombined() throws {
         let opts = try parseArgs(from: [
             "buddy-patcher",
-            "--species", "penguin",
-            "--rarity", "legendary",
-            "--shiny",
-            "--emoji", "🐧",
-            "--dry-run"
+            "--name", "Aethos",
+            "--meta-species", "dragon",
+            "--meta-rarity", "legendary",
+            "--meta-shiny",
+            "--dry-run",
         ])
-        XCTAssertEqual(opts.species, "penguin")
-        XCTAssertEqual(opts.rarity, "legendary")
-        XCTAssertTrue(opts.shiny)
-        XCTAssertEqual(opts.emoji, "🐧")
+        XCTAssertEqual(opts.name, "Aethos")
+        XCTAssertEqual(opts.metaSpecies, "dragon")
+        XCTAssertEqual(opts.metaRarity, "legendary")
+        XCTAssertTrue(opts.metaShiny)
         XCTAssertTrue(opts.dryRun)
     }
 
     func testParseNoArgs() throws {
         let opts = try parseArgs(from: ["buddy-patcher"])
-        XCTAssertNil(opts.species)
-        XCTAssertNil(opts.rarity)
-        XCTAssertFalse(opts.shiny)
+        XCTAssertNil(opts.name)
+        XCTAssertNil(opts.metaSpecies)
+        XCTAssertFalse(opts.metaShiny)
         XCTAssertFalse(opts.restore)
     }
 
     // MARK: - Error cases
 
-    func testParseMissingSpeciesValue() {
-        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--species"])) { error in
+    func testParseMissingNameValue() {
+        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--name"])) { error in
             XCTAssertTrue(error is ParseError)
         }
     }
 
-    func testParseInvalidSpecies() {
-        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--species", "unicorn"])) { error in
-            guard let parseError = error as? ParseError else {
-                XCTFail("Expected ParseError"); return
-            }
+    func testParseInvalidMetaSpecies() {
+        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--meta-species", "unicorn"])) { error in
+            guard let parseError = error as? ParseError else { XCTFail("Expected ParseError"); return }
             XCTAssertTrue(parseError.description.contains("invalid species"))
         }
     }
 
-    func testParseInvalidRarity() {
-        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--rarity", "mythic"])) { error in
-            guard let parseError = error as? ParseError else {
-                XCTFail("Expected ParseError"); return
-            }
+    func testParseInvalidMetaRarity() {
+        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--meta-rarity", "mythic"])) { error in
+            guard let parseError = error as? ParseError else { XCTFail("Expected ParseError"); return }
             XCTAssertTrue(parseError.description.contains("invalid rarity"))
         }
     }
 
     func testParseUnknownFlag() {
         XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--bogus"])) { error in
-            guard let parseError = error as? ParseError else {
-                XCTFail("Expected ParseError"); return
-            }
+            guard let parseError = error as? ParseError else { XCTFail("Expected ParseError"); return }
             XCTAssertTrue(parseError.description.contains("unknown option"))
         }
     }
 
-    func testParseMissingRarityValue() {
-        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--rarity"])) { error in
-            XCTAssertTrue(error is ParseError)
+    // Old binary-patching flags must now be rejected
+    func testParseOldSpeciesFlagRejected() {
+        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--species", "penguin"])) { error in
+            guard let parseError = error as? ParseError else { XCTFail("Expected ParseError"); return }
+            XCTAssertTrue(parseError.description.contains("unknown option"))
+        }
+    }
+
+    func testParseOldRarityFlagRejected() {
+        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--rarity", "legendary"])) { error in
+            guard let parseError = error as? ParseError else { XCTFail("Expected ParseError"); return }
+            XCTAssertTrue(parseError.description.contains("unknown option"))
+        }
+    }
+
+    func testParseOldAnalyzeFlagRejected() {
+        XCTAssertThrowsError(try parseArgs(from: ["buddy-patcher", "--analyze"])) { error in
+            guard let parseError = error as? ParseError else { XCTFail("Expected ParseError"); return }
+            XCTAssertTrue(parseError.description.contains("unknown option"))
         }
     }
 }

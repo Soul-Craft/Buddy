@@ -1,22 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 *patch-buddy.py*)",
       "Bash(*readlink ~/.local/bin/claude*)",
       "Bash(*import json*claude.json*)"
-    ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -q 'patch-buddy.py'; then echo '⚠️ BYTE-LENGTH INVARIANT: Every binary patch MUST produce output identical in byte length to the original. Verify all assert len() checks and test with --dry-run before committing.'; fi"
-          }
-        ]
-      }
     ]
   }
 }

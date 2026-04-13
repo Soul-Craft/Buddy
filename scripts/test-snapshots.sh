@@ -4,8 +4,8 @@
 # Verifies that buddy-patcher's output matches pinned golden files in
 # scripts/BuddyPatcher/Tests/Fixtures/GoldenFiles/.
 #
-# Volatile output (version strings, temp paths, byte counts) is
-# normalized before comparison so tests are stable across environments.
+# Volatile output (version strings, temp paths) is normalized before
+# comparison so tests are stable across environments.
 #
 # Usage:
 #   bash scripts/test-snapshots.sh             # compare against golden files
@@ -20,14 +20,9 @@ PKG="$REPO_ROOT/scripts/BuddyPatcher"
 BIN="$PKG/.build/release/buddy-patcher"
 GOLDEN_DIR="$PKG/Tests/Fixtures/GoldenFiles"
 UPDATE_MODE="${UPDATE_GOLDEN:-0}"
-TEST_DIR="/tmp/buddy-snap-$$"
-TEST_BIN="$TEST_DIR/claude-test"
 
 PASSED=0
 FAILED=0
-
-cleanup() { rm -rf "$TEST_DIR"; }
-trap cleanup EXIT
 
 echo
 echo "  Snapshot Test Suite"
@@ -42,33 +37,18 @@ if [ ! -f "$BIN" ]; then
     echo
 fi
 
-# ── Build test binary ──────────────────────────────────────────────
-
-mkdir -p "$TEST_DIR"
-if ! bash "$REPO_ROOT/scripts/build-test-binary.sh" "$TEST_BIN" >/dev/null 2>&1; then
-    echo "  [!] Failed to build test binary — aborting snapshot tests"
-    echo
-    echo "Results: 0 passed, 1 failed"
-    exit 1
-fi
-
 # ── Normalization ──────────────────────────────────────────────────
 #
 # Replace all volatile fields with stable placeholders:
-#   <VERSION>  — semver strings (v1.0.0)
-#   <TESTBIN>  — full path to the runtime-generated test binary
+#   <VERSION>  — semver strings (2.0.0)
 #   <TMPDIR>   — macOS/Linux temp directory paths
-#   <SIZE>     — file size in bytes (varies if test binary source changes)
-#   <OFFSET>   — hex offsets from --analyze output
 
 normalize() {
     sed -E \
         -e 's/v[0-9]+\.[0-9]+\.[0-9]+/<VERSION>/g' \
-        -e "s#$TEST_BIN#<TESTBIN>#g" \
+        -e 's/[0-9]+\.[0-9]+\.[0-9]+/<VERSION>/g' \
         -e 's#/var/folders/[^ ]*#<TMPDIR>#g' \
-        -e 's#/tmp/[^ ]*#<TMPDIR>#g' \
-        -e 's/[0-9,]+ bytes/<SIZE> bytes/g' \
-        -e 's/0x[0-9a-fA-F]+/<OFFSET>/g'
+        -e 's#/tmp/[^ ]*#<TMPDIR>#g'
 }
 
 # ── Golden file checker ────────────────────────────────────────────
@@ -76,9 +56,6 @@ normalize() {
 # Runs a command, normalizes stdout+stderr, then either:
 #   UPDATE_MODE=1: writes to the golden file (regen mode)
 #   UPDATE_MODE=0: diffs against existing golden file (test mode)
-#
-# The command is always run regardless of expected exit code; errors
-# are captured in the output, not treated as test failures themselves.
 
 check_golden() {
     local name="$1"
@@ -123,28 +100,28 @@ echo
 
 echo "  --- Error: no action flags ---"
 check_golden "error-no-args.txt" \
-    "$BIN" --binary "$TEST_BIN"
+    "$BIN"
 echo
 
 echo "  --- Error: invalid species ---"
 check_golden "error-invalid-species.txt" \
-    "$BIN" --species unicorn --binary "$TEST_BIN"
+    "$BIN" --meta-species unicorn
 echo
 
 echo "  --- Error: invalid rarity ---"
 check_golden "error-invalid-rarity.txt" \
-    "$BIN" --rarity mythic --binary "$TEST_BIN"
+    "$BIN" --meta-rarity mythic
 echo
 
 echo "  --- Error: invalid emoji ---"
 check_golden "error-invalid-emoji.txt" \
-    "$BIN" --species duck --emoji "AB" --binary "$TEST_BIN" --dry-run
+    "$BIN" --meta-emoji "AB" --dry-run
 echo
 
 echo "  --- Dry-run full output ---"
 check_golden "dry-run-full.txt" \
-    "$BIN" --species dragon --rarity legendary --shiny --emoji "🐲" \
-           --dry-run --binary "$TEST_BIN"
+    "$BIN" --meta-species dragon --meta-rarity legendary --meta-shiny \
+           --meta-emoji "🐲" --dry-run
 echo
 
 # ── Summary ────────────────────────────────────────────────────────

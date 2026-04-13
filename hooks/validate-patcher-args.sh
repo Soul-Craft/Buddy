@@ -63,16 +63,16 @@ fi
 
 # ── Extract and validate arguments ─────────────────────────────────
 
-# Extract --emoji value (between quotes after --emoji)
+# Extract --meta-emoji value (between quotes after --meta-emoji)
 EMOJI=$(echo "$COMMAND" | python3 -c "
 import sys, re
 cmd = sys.stdin.read()
-m = re.search(r'--emoji\s+\"([^\"]*?)\"', cmd) or re.search(r'--emoji\s+(\S+)', cmd)
+m = re.search(r'--meta-emoji\s+\"([^\"]*?)\"', cmd) or re.search(r'--meta-emoji\s+(\S+)', cmd)
 print(m.group(1) if m else '')
 " 2>/dev/null || echo "")
 
 if [ -n "$EMOJI" ]; then
-  check_metachar "--emoji" "$EMOJI" 20
+  check_metachar "--meta-emoji" "$EMOJI" 20
   # Check grapheme cluster count (should be 1 emoji)
   GRAPHEME_COUNT=$(python3 -c "
 import unicodedata, sys
@@ -81,7 +81,7 @@ e = sys.argv[1]
 print(len(e))
 " "$EMOJI" 2>/dev/null || echo "0")
   if [ "$GRAPHEME_COUNT" -gt 2 ]; then
-    echo "{\"decision\": \"deny\", \"reason\": \"--emoji should be a single emoji, got $GRAPHEME_COUNT characters\"}" >&2
+    echo "{\"decision\": \"deny\", \"reason\": \"--meta-emoji should be a single emoji, got $GRAPHEME_COUNT characters\"}" >&2
     exit 2
   fi
 fi
@@ -108,11 +108,6 @@ print(m.group(1) if m else '')
 
 if [ -n "$PERSONALITY" ]; then
   check_metachar "--personality" "$PERSONALITY" 500
-fi
-
-# Warn about --binary override
-if [[ "$COMMAND" == *"--binary"* ]]; then
-  echo '{"systemMessage": "Note: --binary override detected. Custom binary path is being used instead of the default Claude Code binary."}'
 fi
 
 # All checks passed

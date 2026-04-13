@@ -5,6 +5,35 @@ All notable changes to Buddy Evolver are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-04-12
+
+### Changed
+- **Retired binary-patching layer** — The plugin no longer patches the Claude Code Mach-O
+  binary. Investigation confirmed the patchable surface was removed from Claude Code
+  between v2.1.90 and v2.1.98 (approximately 2026-04-01 to 2026-04-09).
+- `run-buddy-patcher.sh` now writes name and personality to `~/.claude.json#companion`
+  (soul patching) and saves card metadata to `~/.claude/backups/buddy-patch-meta.json`.
+  No binary is read, no codesign step, no restart required.
+- New CLI flags: `--meta-species`, `--meta-rarity`, `--meta-shiny`, `--meta-no-shiny`,
+  `--meta-emoji`, `--meta-stats` for card metadata. Old flags (`--species`, `--rarity`,
+  `--shiny`, `--binary`, `--analyze`) are rejected as unknown options.
+- Metadata schema bumped to `schema_version: 2` (removes `binary_path` and `binary_sha256`).
+- `/buddy-evolve` skill rewritten: drops binary patch prompts, passes `--meta-*` flags,
+  confirms name/personality are live immediately with no restart needed.
+- `/buddy-reset` skill rewritten: restores soul backup only, no binary restore or codesign.
+- `/security-audit` skill rewritten: 7-point backup health check, no SHA-256 or codesign steps.
+- Test pipeline reduced from 9 tiers (328 tests) to 6 tiers (~181 tests). Retired tiers:
+  integration, functional, e2e (all exercised the binary-patching layer via a synthetic Mach-O).
+- Plugin version bumped to 2.0.0.
+
+### Removed
+- `PatchEngine.swift`, `VariableMapDetection.swift`, `Analyze.swift`, `ByteUtils.swift`,
+  `BinaryDiscovery.swift` — binary patching source files.
+- `scripts/build-test-binary.sh` — synthetic Mach-O test fixture builder.
+- `scripts/test-functional.sh`, `scripts/test-integration.sh`, `scripts/test-e2e.sh`,
+  `scripts/test-compatibility.sh` — test suites that exercised the binary-patching layer.
+- `/buddy-e2e-test`, `/test-patch`, `/update-species-map` skills — obsolete with binary layer.
+
 ## [Unreleased]
 
 ### Added

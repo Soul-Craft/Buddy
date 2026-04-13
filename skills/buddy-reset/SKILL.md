@@ -5,27 +5,28 @@ description: This skill should be used when the user asks to "buddy reset", "res
 
 # Buddy Reset — Restore Your Original Pet
 
-Restore the user's original Claude Code Buddy by reverting all binary patches and companion data.
+Restore the user's original Claude Code Buddy by reverting companion data to the pre-evolution state.
 
-## Step 1: Check for backups
+## Step 1: Check for soul backup
 
 ```bash
-BINARY=$(readlink ~/.local/bin/claude 2>/dev/null || echo "NOT_FOUND")
-BACKUP="${BINARY}.original-backup"
-echo "Binary: $BINARY"
-echo "Backup exists: $(test -f "$BACKUP" && echo 'yes' || echo 'no')"
 echo "Soul backup exists: $(test -f ~/.claude/backups/.claude.json.pre-customize && echo 'yes' || echo 'no')"
+echo "Metadata exists: $(test -f ~/.claude/backups/buddy-patch-meta.json && echo 'yes' || echo 'no')"
 ```
 
-If no backups exist, tell the user there is nothing to restore and exit.
+If the soul backup does not exist, tell the user there is nothing to restore and exit.
 
-## Step 2: Show current vs original
+## Step 2: Show current companion data
 
-Read and display the current companion data from ~/.claude.json so the user knows what they are reverting from.
+```bash
+plutil -extract companion json -o - ~/.claude.json 2>/dev/null || echo "{}"
+```
+
+Display the current name and personality so the user knows what they are reverting from.
 
 ## Step 3: Confirm with user
 
-Ask: "This will restore your original buddy and revert all customizations. Continue?"
+Ask: "This will restore your original companion data and remove the buddy card. Continue?"
 
 ## Step 4: Execute restore
 
@@ -33,13 +34,12 @@ Ask: "This will restore your original buddy and revert all customizations. Conti
 "${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" --restore
 ```
 
-## Step 5: Instruct user
+## Step 5: Inform user
 
-Tell the user to restart Claude Code:
+Tell the user:
 ```
-Your original buddy has been restored. Restart Claude Code to load it:
-   pkill -f claude && claude
-
-Once restarted, run /buddy-status to see your buddy.
+Your original buddy has been restored.
+Changes take effect on your next Claude Code conversation — no restart needed.
+Run /buddy-status to confirm the card is cleared.
 To re-evolve at any time, run /buddy-evolve.
 ```

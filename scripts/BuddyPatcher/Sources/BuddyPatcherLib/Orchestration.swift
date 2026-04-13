@@ -2,98 +2,77 @@ import Foundation
 
 // ── Orchestration ────────────────────────────────────────────────────
 //
-// Pure patch pipeline extracted from main.swift for testability.
-// Takes input data + options, returns patched data + metadata about what was applied.
-// Does not touch the filesystem, backups, codesign, or process state.
+// Soul-only pipeline: writes companion name/personality to ~/.claude.json
+// and saves plugin-local metadata for the /buddy-status card.
+// No binary patching. No codesign. No restart required.
 
-public struct PipelineResult {
-    public let patchedData: [UInt8]
-    public let totalPatches: Int
-    public let varMap: [String: String]
-    public let anchor: [UInt8]
+public struct SoulPipelineResult {
+    public let soulWritten: Bool
+    public let metadataWritten: Bool
     public let warnings: [String]
 
-    public init(patchedData: [UInt8], totalPatches: Int, varMap: [String: String],
-                anchor: [UInt8], warnings: [String]) {
-        self.patchedData = patchedData
-        self.totalPatches = totalPatches
-        self.varMap = varMap
-        self.anchor = anchor
+    public init(soulWritten: Bool, metadataWritten: Bool, warnings: [String]) {
+        self.soulWritten = soulWritten
+        self.metadataWritten = metadataWritten
         self.warnings = warnings
     }
 }
 
-/// Detects whether any work is requested in the given options.
+/// Returns true when opts contain any soul or card metadata to write.
 public func hasPatchWork(_ opts: Options) -> Bool {
-    return opts.species != nil || opts.rarity != nil || opts.shiny || opts.noShiny ||
-        opts.emoji != nil || opts.name != nil || opts.personality != nil || opts.stats != nil
+    return opts.name != nil || opts.personality != nil
+        || opts.metaSpecies != nil || opts.metaRarity != nil
+        || opts.metaShiny || opts.metaNoShiny
+        || opts.metaEmoji != nil || opts.metaStats != nil
 }
 
-/// Apply all requested patches to the given data buffer.
-/// Pure function — no filesystem or process side effects.
-public func runPatchPipeline(data: [UInt8], opts: Options) -> PipelineResult {
-    var patched = data
-    var totalPatches = 0
+/// Run the soul pipeline: patch companion in ~/.claude.json, save card metadata.
+/// configPath and metaPath override defaults (for testing via BUDDY_HOME).
+public func runSoulPipeline(opts: Options, configPath: URL? = nil,
+                            metaPath: URL? = nil) -> SoulPipelineResult {
     var warnings: [String] = []
 
-    // Detect var map
-    let hasBinaryOps = opts.species != nil || opts.rarity != nil || opts.shiny || opts.noShiny || opts.emoji != nil
-    let varMap: [String: String]
-    let anchor: [UInt8]
-    if let detected = detectVarMap(in: patched) {
-        varMap = detected.varMap
-        anchor = detected.anchor
-    } else if hasBinaryOps {
-        // No known anchor pattern found — skip all binary patches and return early with a
-        // single actionable message rather than emitting one warning per patch type.
-        let fallback = knownVarMaps[0]
-        warnings.append(
-            "No matching anchor found in this binary — binary patches skipped " +
-            "(species/rarity/shiny/art). Soul customization will still be applied. " +
-            "Run /update-species-map to investigate."
-        )
-        return PipelineResult(
-            patchedData: patched,
-            totalPatches: 0,
-            varMap: fallback,
-            anchor: anchorForMap(fallback),
-            warnings: warnings
-        )
+    // Soul write (name + personality → ~/.claude.json#companion)
+    let soulWritten: Bool
+    if opts.name != nil || opts.personality != nil {
+        soulWritten = patchSoul(name: opts.name, personality: opts.personality, configPath: configPath)
+        if !soulWritten {
+            warnings.append("Soul write failed — ~/.claude.json may be missing or malformed")
+        }
     } else {
-        // No binary patches requested (soul-only) — use fallback silently.
-        varMap = knownVarMaps[0]
-        anchor = anchorForMap(varMap)
+        soulWritten = false
     }
 
-    // Species
-    if let species = opts.species {
-        totalPatches += patchSpecies(&patched, target: species, anchor: anchor, varMap: varMap)
+    // Card metadata write (cosmetic state for /buddy-status)
+    let hasMetadata = opts.metaSpecies != nil || opts.metaRarity != nil
+        || opts.metaShiny || opts.metaNoShiny || opts.metaEmoji != nil
+        || opts.metaStats != nil || opts.name != nil || opts.personality != nil
+
+    let metadataWritten: Bool
+    if hasMetadata {
+        var statsDict: [String: Any]?
+        if let statsJSON = opts.metaStats,
+           let statsData = statsJSON.data(using: .utf8),
+           let parsed = try? JSONSerialization.jsonObject(with: statsData) as? [String: Any] {
+            statsDict = parsed
+        }
+        // metaShiny takes precedence over metaNoShiny when both are set
+        let shiny = opts.metaShiny ? true : (opts.metaNoShiny ? false : false)
+        saveMetadata(
+            species: opts.metaSpecies,
+            rarity: opts.metaRarity,
+            shiny: shiny,
+            emoji: opts.metaEmoji,
+            name: opts.name,
+            personality: opts.personality,
+            stats: statsDict,
+            metaPath: metaPath
+        )
+        metadataWritten = true
+    } else {
+        metadataWritten = false
     }
 
-    // Rarity
-    if let rarity = opts.rarity {
-        totalPatches += patchRarity(&patched, target: rarity)
-    }
-
-    // Shiny (shiny takes precedence over noShiny if both set)
-    if opts.shiny {
-        totalPatches += patchShiny(&patched, makeShiny: true)
-    } else if opts.noShiny {
-        totalPatches += patchShiny(&patched, makeShiny: false)
-    }
-
-    // Art (emoji) — requires species to know which art block to target
-    if let emoji = opts.emoji, let species = opts.species {
-        totalPatches += patchArt(&patched, target: species, emoji: emoji, varMap: varMap)
-    } else if opts.emoji != nil && opts.species == nil {
-        warnings.append("--emoji requires --species to know which art to replace")
-    }
-
-    return PipelineResult(
-        patchedData: patched,
-        totalPatches: totalPatches,
-        varMap: varMap,
-        anchor: anchor,
-        warnings: warnings
-    )
+    return SoulPipelineResult(soulWritten: soulWritten, metadataWritten: metadataWritten,
+                              warnings: warnings)
 }

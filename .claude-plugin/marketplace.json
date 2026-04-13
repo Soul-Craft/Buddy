@@ -10,8 +10,8 @@
         "source": "github",
         "repo": "Soul-Craft/buddy-evolver"
       },
-      "description": "Evolve your Claude Code Buddy terminal pet — feed it a psychedelic mushroom and watch it transform into your dream companion with custom species, rarity, emoji, name, stats, and personality",
-      "version": "1.0.1",
+      "description": "Customize your Claude Code companion's name and personality, and track its evolution with a Tamagotchi-style terminal card. Name and personality reach Claude Code directly; species, rarity, emoji, and stats are plugin-local card flair.",
+      "version": "2.0.0",
       "author": {
         "name": "Soul-Craft"
       },

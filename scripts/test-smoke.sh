@@ -6,7 +6,7 @@
 #
 # Tests fall into three groups:
 #   1. Build sanity     — binary exists, is Mach-O, codesigns clean
-#   2. CLI contract     — --help works, no-args fails, valid dry-run succeeds
+#   2. CLI contract     — --help, --version, no-args fails, valid dry-run succeeds
 #   3. Validation       — invalid inputs fail fast at exit(1)
 #
 # Output format matches test-all.sh's parser: "Results: N passed, M failed"
@@ -17,14 +17,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PKG="$REPO_ROOT/scripts/BuddyPatcher"
 BIN="$PKG/.build/release/buddy-patcher"
-TEST_DIR="/tmp/buddy-smoke-$$"
-TEST_BIN="$TEST_DIR/claude-test"
 
 PASSED=0
 FAILED=0
-
-cleanup() { rm -rf "$TEST_DIR"; }
-trap cleanup EXIT
 
 # ── Helpers ────────────────────────────────────────────────────────
 
@@ -101,17 +96,6 @@ if [ ! -f "$BIN" ]; then
     echo
 fi
 
-# ── Generate isolated test binary ──────────────────────────────────
-# build-test-binary.sh accepts an output path; give it a per-run dir so
-# parallel runs don't race.
-mkdir -p "$TEST_DIR"
-if ! bash "$REPO_ROOT/scripts/build-test-binary.sh" "$TEST_BIN" >/dev/null 2>&1; then
-    echo "  [!] Failed to build test binary — aborting smoke tests"
-    echo
-    echo "Results: 0 passed, 1 failed"
-    exit 1
-fi
-
 # ── Group 1: Build sanity ─────────────────────────────────────────
 echo "  --- Build sanity ---"
 echo
@@ -119,7 +103,6 @@ echo
 assert_executable "buddy-patcher binary exists and is executable" "$BIN"
 assert_file_type "binary is Mach-O 64-bit executable" "$BIN" "Mach-O 64-bit executable"
 assert_exit "codesign -v passes on built binary" 0 codesign -v "$BIN"
-assert_file_type "test binary is Mach-O 64-bit executable" "$TEST_BIN" "Mach-O 64-bit executable"
 
 echo
 
@@ -130,9 +113,10 @@ echo
 assert_contains "--help prints USAGE header" "USAGE:" "$BIN" --help
 assert_contains "-h prints USAGE header" "USAGE:" "$BIN" -h
 assert_exit "--help exits 0" 0 "$BIN" --help
-assert_exit "no args (no --binary) exits non-zero" 1 "$BIN"
-assert_exit "--dry-run --species duck --binary <test> exits 0" 0 \
-    "$BIN" --dry-run --species duck --binary "$TEST_BIN"
+assert_exit "--version exits 0" 0 "$BIN" --version
+assert_exit "no args exits non-zero" 1 "$BIN"
+assert_exit "--dry-run --meta-species duck exits 0" 0 \
+    "$BIN" --dry-run --meta-species duck
 
 echo
 
@@ -140,17 +124,14 @@ echo
 echo "  --- Validation fast-fail ---"
 echo
 
-# Invalid species is rejected at parse time (before any filesystem touch).
 assert_exit "invalid species rejected" 1 \
-    "$BIN" --species unicorn --binary "$TEST_BIN" --dry-run
+    "$BIN" --meta-species unicorn --dry-run
 assert_exit "invalid rarity rejected" 1 \
-    "$BIN" --rarity mythic --binary "$TEST_BIN" --dry-run
-# Multi-char emoji rejected by validateEmoji after parsing.
+    "$BIN" --meta-rarity mythic --dry-run
 assert_exit "multi-char emoji rejected" 1 \
-    "$BIN" --species duck --emoji "AB" --binary "$TEST_BIN" --dry-run
-# Non-Mach-O file rejected by validateBinaryPath.
-assert_exit "non-Mach-O binary path rejected" 1 \
-    "$BIN" --binary /etc/hosts --analyze
+    "$BIN" --meta-emoji "AB" --dry-run
+assert_exit "--dry-run --name exits 0" 0 \
+    "$BIN" --name "Test" --dry-run
 
 echo
 

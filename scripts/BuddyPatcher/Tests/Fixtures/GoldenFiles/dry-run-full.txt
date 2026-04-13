@@ -1,18 +1,12 @@
 
   🍄 Buddy Customizer <VERSION>
-  ═══════════════════════════
-
-  Binary: <TESTBIN>
-  Version: claude-test
+  ═══════════════════════════════════
 
   [DRY RUN MODE — no changes will be applied]
 
-  Read <SIZE> bytes
-  Detected variable format: GL_ (anchor: GL_,ZL_,LL_,kL_,...)
-
-  [DRY RUN] Would patch species → dragon (vL_)
-  [DRY RUN] Would patch rarity → legendary
-  [DRY RUN] Would patch shiny → always true
-  [DRY RUN] Would patch art → 🐲
+  [DRY RUN] Would set card species → dragon
+  [DRY RUN] Would set card rarity → legendary
+  [DRY RUN] Would set card shiny → true
+  [DRY RUN] Would set card emoji → 🐲
 
   [DRY RUN] No changes were made.

@@ -1,20 +1,26 @@
 Error: invalid species 'unicorn'. Valid: duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara
-Buddy Customizer — evolve your Claude Code terminal pet
+Buddy Customizer <VERSION> — evolve your Claude Code companion
 
 USAGE:
   buddy-patcher [OPTIONS]
 
-OPTIONS:
-  --species <name>        Target species (duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara)
-  --rarity <tier>         Target rarity (common, uncommon, rare, epic, legendary)
-  --shiny                 Make buddy shiny (always)
-  --no-shiny              Remove shiny (restore 1% probability)
-  --emoji <emoji>         Custom emoji for buddy art (requires --species)
-  --name <name>           Buddy name (written to ~/.claude.json)
-  --personality <text>    Buddy personality description
-  --stats <json>          Stats as JSON: {"debugging":99,...}
-  --restore               Restore original buddy from backup
-  --dry-run               Show what would change without applying
-  --analyze               Analyze binary for pattern locations
-  --binary <path>         Override binary path (for testing)
-  --help                  Show this help message
+SOUL OPTIONS (written to ~/.claude.json — Claude Code reads these):
+  --name <name>               Buddy name
+  --personality <text>        Buddy personality description
+
+CARD OPTIONS (plugin-local — drive the /buddy-status card):
+  --meta-species <name>       Species (duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, axolotl, ghost, robot, mushroom, cactus, rabbit, chonk, capybara)
+  --meta-rarity <tier>        Rarity (common, uncommon, rare, epic, legendary)
+  --meta-shiny                Mark buddy as shiny
+  --meta-no-shiny             Remove shiny flag
+  --meta-emoji <emoji>        Custom emoji for card display
+  --meta-stats <json>         Stats as JSON: {"debugging":99,...}
+
+OTHER:
+  --restore                   Restore soul from backup
+  --dry-run                   Show what would change without applying
+  --version                   Show version
+  --help, -h                  Show this help message
+
+NOTE: Name and personality reach Claude Code via companion_intro.
+      Species, rarity, shiny, emoji, and stats are plugin-local card flair only.
