@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload test-results artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ github.run_id }}
           path: test-results/
@@ -66,7 +66,7 @@ jobs:
 
       - name: Upload JUnit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: junit-${{ github.run_id }}
           path: test-results/junit.xml
