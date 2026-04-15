@@ -222,6 +222,10 @@ Pre-`/exit` cleanup. Run BEFORE typing `/exit`. Inventories worktrees + branches
 
 Haiku read-only agent used by `/session-end`. Audits inline code comments in recently changed files (Swift sources + shell scripts). Reports only — never edits.
 
+### Agent: security-reviewer
+
+Read-only agent used by `/session-end` when Swift files change. Reviews `scripts/BuddyPatcher/Sources/**/*.swift` for missing input validation, non-atomic writes, unsafe `try!`, and backup-safety invariants. Reports PASS/WARN/FAIL items — never edits.
+
 ### Skill: /buddy-evolve
 
 Interactive 4-act evolution flow: discover current buddy, design new buddy (species, rarity, emoji, name, personality, stats), run `run-buddy-patcher.sh` with `--meta-*` flags, display the evolved card. Writes name and personality to `~/.claude.json#companion` and card metadata to `~/.claude/backups/buddy-patch-meta.json`. Changes take effect immediately.

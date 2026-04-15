@@ -494,7 +494,7 @@ The plugin ships 14 skills, 6 agents, and 5 hooks:
 
 ## 🛡️ Security Model
 
-The plugin uses defense-in-depth across two layers to protect write operations:
+The plugin uses defense-in-depth across three layers to protect write operations:
 
 <details>
 <summary>🔍 Layer details</summary>
