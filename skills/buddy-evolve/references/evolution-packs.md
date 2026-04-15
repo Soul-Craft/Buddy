@@ -1,6 +1,6 @@
 # Evolution Packs — Data Reference
 
-Used by the `/buddy evolve` flow in `SKILL.md`. Each pack is a complete buddy bundle: one pick, everything set.
+Used by the `/buddy-evolve` flow in `SKILL.md`. Each pack is a complete buddy bundle: one pick, everything set.
 
 All packs use **rarity: legendary** and **--shiny** by default.
 

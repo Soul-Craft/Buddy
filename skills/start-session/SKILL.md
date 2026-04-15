@@ -22,7 +22,6 @@ Present the output verbatim to the user inside a code block.
 Scan the hook output for these markers and, if present, surface them above the verbatim output as a short "Action needed" header:
 
 - `⚠ STALE` in the Main line → recommend: `git pull --rebase origin main` or rebase the branch
-- `Compatibility: WARNINGS` → recommend: `/test-patch` then `/update-species-map` if patterns moved
 - `backup_status: no backup` → recommend: evolve first before reset operations
 - `Pending cleanup:` line with non-zero `failed` count → note that retry happens on next session
 

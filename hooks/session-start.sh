@@ -107,11 +107,11 @@ if [[ -f "$PATCHER_BIN" && "$binary_status" == "found" ]]; then
     --dry-run --species dragon --rarity legendary --shiny \
     --emoji "🐲" --name "Test" --personality "Test" 2>&1 || true)
   if echo "$dry_output" | grep -q '\[!\] WARNING'; then
-    compat="WARNINGS — run /test-patch"
+    compat="WARNINGS (see dry-run output)"
   elif echo "$dry_output" | grep -q '\[DRY RUN\]'; then
-    compat="all patterns match"
+    compat="dry-run ok"
   else
-    compat="could not determine (run /test-patch)"
+    compat="could not determine"
   fi
 fi
 
