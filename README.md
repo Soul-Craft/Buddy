@@ -72,6 +72,7 @@ Pick the species. Choose the rarity. Name it. Define its personality. Max out it
 
 - [Prerequisites](#-prerequisites)
 - [Install](#-install)
+- [Upgrading from v1.x](#upgrading-from-v1x)
 - [Quick Start](#-quick-start)
 - [Commands](#commands)
 - [Species](#-species)
@@ -118,6 +119,38 @@ Then
 ```
 
 This adds slash commands including `/buddy-evolve`, `/buddy-reset`, `/buddy-status`, and `/security-audit`.
+
+---
+
+<a id="upgrading-from-v1x"></a>
+
+## ⬆️ Upgrading from v1.x
+
+Claude Code v2.1.104 shipped a native `/buddy` command for hatching companions. The legacy
+v1.0.0 plugin cache registered its own `/buddy` skill (later split into `/buddy-evolve`,
+`/buddy-reset`, and `/buddy-status`). If you installed before the v2.0.0 release, your
+plugin cache is shadowing Anthropic's native `/buddy` and `/plugin` does not auto-upgrade.
+
+To clear the old cache and pick up v2.0.0, run these **inside Claude Code**:
+
+```
+/plugin uninstall buddy-evolver@soul-craft
+```
+
+Then from a regular terminal:
+
+```bash
+rm -rf ~/.claude/plugins/cache/soul-craft/buddy-evolver/
+```
+
+Back in Claude Code:
+
+```
+/plugin install buddy-evolver@soul-craft
+```
+
+Restart Claude Code. Type `/buddy` — only Anthropic's native `/buddy` should remain; the
+plugin's commands are now `/buddy-evolve`, `/buddy-reset`, and `/buddy-status`.
 
 ---
 

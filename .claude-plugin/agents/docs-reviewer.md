@@ -38,7 +38,7 @@ For each discovered item, verify it is properly documented:
 **Skills** must appear in:
 - CLAUDE.md file tree (e.g., `skills/buddy-evolve/`)
 - CLAUDE.md Automations section (e.g., `### Skill: /buddy-evolve`)
-- README.md Commands section (user-facing skills only: buddy-evolve, buddy-reset, buddy-status, test-patch, update-species-map, security-audit)
+- README.md Commands section (user-facing skills only: buddy-evolve, buddy-reset, buddy-status, security-audit)
 
 **Agents** must appear in:
 - CLAUDE.md file tree (with correct location: `agents/` vs `.claude-plugin/agents/`)

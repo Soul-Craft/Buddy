@@ -125,9 +125,9 @@ After applying optimizations:
    - All bash code blocks are preserved
    - Read instructions point to files that exist
 
-2. **Functional check** — run the test-patch skill in dry-run mode:
+2. **Functional check** — dry-run the patcher with the v2.0.0 soul + meta flags:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" --dry-run --species dragon --rarity legendary --shiny --emoji "🐲" --name "Test" --personality "Test"
+"${CLAUDE_PLUGIN_ROOT}/scripts/run-buddy-patcher.sh" --dry-run --meta-species dragon --meta-rarity legendary --meta-shiny --meta-emoji "🐲" --name "Test" --personality "Test"
 ```
 
 3. **Diff summary**:

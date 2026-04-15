@@ -222,6 +222,14 @@ Pre-`/exit` cleanup. Run BEFORE typing `/exit`. Inventories worktrees + branches
 
 Haiku read-only agent used by `/session-end`. Audits inline code comments in recently changed files (Swift sources + shell scripts). Reports only — never edits.
 
+### Skill: /buddy-evolve
+
+Interactive 4-act evolution flow: discover current buddy, design new buddy (species, rarity, emoji, name, personality, stats), run `run-buddy-patcher.sh` with `--meta-*` flags, display the evolved card. Writes name and personality to `~/.claude.json#companion` and card metadata to `~/.claude/backups/buddy-patch-meta.json`. Changes take effect immediately.
+
+### Skill: /buddy-reset
+
+Restores `~/.claude.json` from the pre-evolution soul backup (`~/.claude/backups/.claude.json.pre-customize`) and removes card metadata. Safe to run any time; no-ops if no backup exists.
+
 ### Skill: /buddy-status
 
 Read-only display of the current buddy as a visual card with rarity flair, stat bars, and age. Reads `~/.claude.json` and `~/.claude/backups/buddy-patch-meta.json`. No files modified.

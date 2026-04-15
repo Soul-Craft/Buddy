@@ -36,22 +36,26 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
-- E2E test tier (`scripts/test-e2e.sh`) — 23-check real-binary reset→evolve→verify→reset
-  flow with `trap`-based cleanup and graceful CI skip when binary not installed
-- `/buddy-e2e-test` skill — on-demand E2E validation with phase-by-phase pass/fail table;
-  non-conversational (`disable-model-invocation: true`)
-- `make test-e2e` Makefile target (Stage 4: Real-world, depends on `build`)
-
 ### Changed
-- Binary patch failure UX: when the binary doesn't match any known anchor pattern, the
-  patcher now emits a single consolidated warning ("No matching anchor found — binary
-  patches skipped") instead of four separate per-type warnings. Soul customization
-  (name, personality, stats) is unaffected. `Orchestration.swift` short-circuits the
-  pipeline on anchor miss rather than letting all four patch functions fail individually.
-- Completion message now distinguishes "0 binary patches, soul applied" from full
-  success, with a clear `run /update-species-map` prompt.
-- Test pipeline expanded from 8 tiers (303 tests) to 9 tiers (326 tests).
+- Confirmed retirement of the plugin-registered `/buddy` command. The skill itself was
+  split into `/buddy-evolve`, `/buddy-reset`, and `/buddy-status` in PR #4 (pre-v2.0.0)
+  and is absent from the current source. However, Claude Code v2.1.104 shipped a native
+  `/buddy` command for hatching companions, and installs pinned to the v1.0.0 cache
+  (`gitCommitSha 2cc775d`) were shadowing it. Existing users must reinstall to pick up
+  the v2.0.0 surface — see "Upgrading from v1.x" in `README.md`.
+
+### Added
+- Regression guard in `scripts/test-docs.sh` (Group 10) — rejects any future skill named
+  `buddy`, `test-patch`, or `update-species-map` (either as a `skills/<name>/` directory
+  or via `name:` frontmatter). Prevents accidental re-introduction of retired commands.
+
+### Fixed
+- Stale references to the retired `/test-patch` and `/update-species-map` skills in
+  `CONTRIBUTING.md`, `.github/ISSUE_TEMPLATE/bug_report.yml`, `hooks/session-start.sh`,
+  `skills/start-session/SKILL.md`, `skills/sync-docs/SKILL.md`,
+  `skills/token-review/SKILL.md`, `skills/buddy-evolve/references/evolution-packs.md`,
+  and `.claude-plugin/agents/docs-reviewer.md`. Updated the `/token-review` dry-run
+  invocation to use v2.0.0 `--meta-*` flags.
 
 ## [1.0.1] - 2026-04-10
 
@@ -120,6 +124,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   "Unhandled node type: string" — fixed in 1.0.1 by splitting into separate
   `/buddy-evolve`, `/buddy-reset`, and `/buddy-status` skills.
 
-[Unreleased]: https://github.com/Soul-Craft/buddy-evolver/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/Soul-Craft/buddy-evolver/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Soul-Craft/buddy-evolver/releases/tag/v2.0.0
 [1.0.1]: https://github.com/Soul-Craft/buddy-evolver/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Soul-Craft/buddy-evolver/releases/tag/v1.0.0

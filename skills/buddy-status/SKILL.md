@@ -55,36 +55,11 @@ print(json.dumps({
 
 Use the JSON output to render the appropriate card.
 
+Read card templates from `${CLAUDE_PLUGIN_ROOT}/skills/buddy-status/references/card-templates.md` and use the matching variant below.
+
 ### If evolved (metadata exists)
 
-Display this card, substituting actual values. Use the box-drawing format exactly:
-
-```
-╔══════════════════════════════════════════╗
-║  [EMOJI]  [N A M E — spaced out caps]   ║
-║  [RARITY_FLAIR] [✨ SHINY if shiny]     ║
-╠══════════════════════════════════════════╣
-║                                          ║
-║  Species:      [species] [emoji]         ║
-║  Personality:  "[personality]"           ║
-║  Age:          [age display]             ║
-║  Hatched:      [hatched_date]            ║
-║  Evolution:    Evolved (v[version])      ║
-║                                          ║
-╠══════════════════════════════════════════╣
-║  S T A T S                               ║
-║                                          ║
-║  DEBUGGING  [██████████]  [n]            ║
-║  PATIENCE   [██████████]  [n]            ║
-║  CHAOS      [██████████]  [n]            ║
-║  WISDOM     [██████████]  [n]            ║
-║  SNARK      [██████████]  [n]            ║
-║                                          ║
-╠══════════════════════════════════════════╣
-║  /buddy-evolve   Re-evolve your buddy   ║
-║  /buddy-reset    Restore original buddy ║
-╚══════════════════════════════════════════╝
-```
+Use the "Evolved Card" template from card-templates.md, substituting actual values.
 
 **Rarity flair** — prefix the rarity name with:
 - legendary → `★ LEGENDARY`
@@ -98,15 +73,7 @@ Display this card, substituting actual values. Use the box-drawing format exactl
 - Empty blocks: `(10 - floor(n / 10))` × `░`
 - Example: 85 → `████████░░`
 
-**If stats is null or missing**, replace the stats section with:
-```
-║  S T A T S                               ║
-║                                          ║
-║  No stats assigned yet.                  ║
-║  Re-evolve with /buddy-evolve to set     ║
-║  custom stats for your buddy.            ║
-║                                          ║
-```
+**If stats is null or missing**, use the "No-Stats Variant" from card-templates.md to replace the stats section.
 
 **Age display**:
 - Less than 1 hour → "Just hatched!"
@@ -119,31 +86,8 @@ Display this card, substituting actual values. Use the box-drawing format exactl
 
 ### If NOT evolved (no metadata)
 
-Display this simpler card:
-
-```
-╔══════════════════════════════════════════╗
-║  🐣  [N A M E — spaced out caps]        ║
-║  Wild Buddy — Not yet evolved            ║
-╠══════════════════════════════════════════╣
-║                                          ║
-║  Personality:  "[personality]"           ║
-║  Age:          [age display]             ║
-║  Hatched:      [hatched_date]            ║
-║                                          ║
-║  Your buddy hasn't evolved yet!          ║
-║  Feed it a psychedelic mushroom 🍄       ║
-║  to unlock species, stats, and more.     ║
-║                                          ║
-╠══════════════════════════════════════════╣
-║  /buddy-evolve   Start evolution 🍄     ║
-╚══════════════════════════════════════════╝
-```
+Use the "Unevolved Card" template from card-templates.md.
 
 ### If no buddy at all (no ~/.claude.json or no companion key)
 
-Display:
-```
-No buddy found! Start Claude Code to hatch your companion,
-then run /buddy-evolve to customize it.
-```
+Use the "No Buddy" template from card-templates.md.

@@ -11,6 +11,7 @@
 #   7. skills/ directories each have a SKILL.md file
 #   8. hooks/hooks.json shell scripts exist on disk
 #   9. Session workflow skills (session-end, session-deploy) only reference real files
+#  10. Retired skills (buddy, test-patch, update-species-map) stay retired
 #
 # Output: "Results: N passed, M failed" on the last line.
 set -uo pipefail
@@ -375,6 +376,46 @@ check_refs() {
 
 check_refs "/session-end" "skills/session-end/SKILL.md" "${END_SESSION_REFS[@]}"
 check_refs "/session-deploy" "skills/session-deploy/SKILL.md" "${SESSION_DEPLOY_REFS[@]}"
+
+echo
+
+# ── Group 10: Retired skill guard ──────────────────────────────────
+#
+# Claude Code v2.1.104 shipped a native /buddy command. A plugin skill named
+# `buddy` shadows it. /test-patch and /update-species-map were retired with the
+# binary-patching layer in v2.0.0. None of these names may reappear as skills
+# (neither as a directory under skills/ nor as a SKILL.md frontmatter name:).
+
+echo "  --- Group 10: Retired skill guard ---"
+echo
+
+forbidden_hits=0
+forbidden_list=""
+
+for name in buddy test-patch update-species-map; do
+    if [ -d "skills/$name" ]; then
+        forbidden_list="$forbidden_list\n    skills/$name/ exists"
+        forbidden_hits=$((forbidden_hits + 1))
+    fi
+done
+
+if compgen -G "skills/*/SKILL.md" >/dev/null 2>&1; then
+    bad_frontmatter=$(grep -lE '^name:[[:space:]]+(buddy|test-patch|update-species-map)[[:space:]]*$' skills/*/SKILL.md 2>/dev/null || true)
+    if [ -n "$bad_frontmatter" ]; then
+        while IFS= read -r f; do
+            forbidden_list="$forbidden_list\n    $f uses a forbidden frontmatter name"
+            forbidden_hits=$((forbidden_hits + 1))
+        done <<< "$bad_frontmatter"
+    fi
+fi
+
+if [ "$forbidden_hits" -eq 0 ]; then
+    assert_pass "No retired skills present (buddy, test-patch, update-species-map)" "0"
+else
+    echo "  [FAIL] Retired skills must not return ($forbidden_hits finding(s)):"
+    printf '%b\n' "$forbidden_list"
+    FAILED=$((FAILED + 1))
+fi
 
 echo
 

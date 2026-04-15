@@ -34,12 +34,12 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Fill in all fields — binary patching is version-sensitive.
+      description: Fill in all fields.
       value: |
         - macOS version:
         - Claude Code version: (run `claude --version`)
-        - Buddy Evolver version: 1.0.0
-        - Output of `/test-patch`: (paste results here)
+        - Buddy Evolver version: (check `plugin.json` or run `/buddy-status`)
+        - Output of `/security-audit`: (paste results here)
     validations:
       required: true
 
