@@ -28,8 +28,8 @@ Scan the hook output for these markers and, if present, surface them above the v
 
 ## Step 3: Offer next action (optional)
 
-If everything is healthy, end with a one-liner like:
-"Ready to work. What are we building?"
+If everything is healthy, end with:
+"You are in **Phase 1 (Plan)**. Describe what you want to build, and I will design the implementation plan before writing any code. Run `/session-execute` when the plan is approved."
 
 If warnings were surfaced, ask whether the user wants to address them now or defer.
 
