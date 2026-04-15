@@ -373,7 +373,7 @@ scripts/
   test-perf.sh                    Performance benchmarks (on-demand)
   coverage.sh                     Local HTML coverage report
   setup-labels.sh                 One-time GitHub label setup for new/forked repos
-skills/                           12 slash commands (see tables below)
+skills/                           14 slash commands (see tables below)
 ```
 
 </details>
@@ -395,10 +395,10 @@ skills/                           12 slash commands (see tables below)
 
 ### Plugin automation
 
-The plugin ships 12 skills, 6 agents, and 5 hooks:
+The plugin ships 14 skills, 6 agents, and 5 hooks:
 
 <details>
-<summary>📜 Skills (12 slash commands)</summary>
+<summary>📜 Skills (14 slash commands)</summary>
 
 **User-facing:**
 
@@ -421,6 +421,8 @@ The plugin ships 12 skills, 6 agents, and 5 hooks:
 | `/start-session` | Refresh dev context (delegates to SessionStart hook — no hardcoded list to drift) |
 | `/session-end` | Pre-commit wrap-up: token review → test-all → upload Check Run → sync docs → comment audit |
 | `/session-deploy` | Post-merge: sync local main, verify smoke, clean other worktrees, stage self-cleanup for `/exit` |
+| `/session-execute` | Plan → Execute transition: prints model/effort recommendations and restates approved plan scope |
+| `/session-exit` | Pre-`/exit` checks: inventory branches and worktrees, recommend merged-branch deletions, warn about uncommitted work |
 
 </details>
 

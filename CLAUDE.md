@@ -7,7 +7,7 @@ Claude Code plugin that customizes the terminal Buddy companion by writing name 
 ```
 .claude-plugin/plugin.json       Plugin manifest (name, version, metadata)
 .claude-plugin/marketplace.json  Marketplace listing (for /plugin install)
-.claude-plugin/agents/           Subagents (cache-analyzer, token-review)
+.claude-plugin/agents/           Subagents (cache-analyzer, docs-reviewer, token-review)
 .claude/settings.json            Permissions for common bash patterns
 hooks/hooks.json                 Plugin hooks (SessionStart + SessionEnd + PreToolUse)
 hooks/session-start.sh           SessionStart hook: dynamic dev context + pending cleanup retry
