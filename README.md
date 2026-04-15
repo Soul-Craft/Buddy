@@ -345,7 +345,7 @@ Everything below is for contributors and developers working on the plugin itself
 .github/workflows/                CI workflows (quality, verify-local, macos-fallback, release)
 agents/
   security-reviewer.md            Security review agent for Swift changes
-  comment-reviewer.md             Inline comment audit agent for /end-session (Haiku)
+  comment-reviewer.md             Inline comment audit agent for /session-end (Haiku)
   test-runner.md                  Test execution agent
 hooks/
   hooks.json                      Hook definitions (SessionStart + SessionEnd + PreToolUse)
@@ -370,9 +370,9 @@ scripts/
   test-ui.sh                      Buddy card rendering against fixtures
   test-snapshots.sh               Golden file comparison for CLI output
   test-docs.sh                    Documentation path + link + count consistency
-  test-compatibility.sh           On-demand compatibility validation
   test-perf.sh                    Performance benchmarks (on-demand)
   coverage.sh                     Local HTML coverage report
+  setup-labels.sh                 One-time GitHub label setup for new/forked repos
 skills/                           12 slash commands (see tables below)
 ```
 
@@ -419,7 +419,7 @@ The plugin ships 12 skills, 6 agents, and 5 hooks:
 | `/token-review` | 5-phase context footprint audit with optimization recommendations |
 | `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
 | `/start-session` | Refresh dev context (delegates to SessionStart hook — no hardcoded list to drift) |
-| `/end-session` | Pre-commit wrap-up: token review → test-all → upload Check Run → sync docs → comment audit |
+| `/session-end` | Pre-commit wrap-up: token review → test-all → upload Check Run → sync docs → comment audit |
 | `/session-deploy` | Post-merge: sync local main, verify smoke, clean other worktrees, stage self-cleanup for `/exit` |
 
 </details>
@@ -430,7 +430,7 @@ The plugin ships 12 skills, 6 agents, and 5 hooks:
 | Agent | Purpose |
 |-------|---------|
 | `security-reviewer` | Reviews Swift code for validation gaps and unsafe patterns |
-| `comment-reviewer` | Haiku read-only audit of inline comments in changed files — used by `/end-session` |
+| `comment-reviewer` | Haiku read-only audit of inline comments in changed files — used by `/session-end` |
 | `test-runner` | Builds and runs Swift tests, parses per-suite results |
 | `cache-analyzer` | Scans build artifacts, orphaned worktrees, backup sizes, disk usage |
 | `docs-reviewer` | Detects documentation gaps, stale entries, and path mismatches |

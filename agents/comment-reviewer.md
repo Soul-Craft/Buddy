@@ -1,13 +1,13 @@
 ---
 name: comment-reviewer
-description: Use this agent to audit inline code comments in recently changed files for readability and staleness. Read-only — reports flagged items but does not apply edits. Invoked by /end-session. Examples:
+description: Use this agent to audit inline code comments in recently changed files for readability and staleness. Read-only — reports flagged items but does not apply edits. Invoked by /session-end. Examples:
 
   <example>
-  Context: Developer modified PatchEngine.swift and is running /end-session before committing
+  Context: Developer modified PatchEngine.swift and is running /session-end before committing
   user: "Let's wrap up the session"
   assistant: "I'll run the comment-reviewer agent to audit comments in the changed Swift files."
   <commentary>
-  At end-session, comment-reviewer scans changed files for missing docs on non-obvious functions, stale comments, and security-critical functions without SECURITY markers.
+  At session-end, comment-reviewer scans changed files for missing docs on non-obvious functions, stale comments, and security-critical functions without SECURITY markers.
   </commentary>
   </example>
 
@@ -92,7 +92,7 @@ For each `# shellcheck disable=` line in changed shell scripts, verify there is 
 
 ## Output format
 
-Produce a structured report that `/end-session` can parse:
+Produce a structured report that `/session-end` can parse:
 
 ```
 MISSING_COMMENT:

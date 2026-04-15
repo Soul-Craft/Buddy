@@ -16,7 +16,7 @@ hooks/validate-patcher-args.sh   Security hook: validates patcher arguments
 hooks/check-doc-freshness.sh     Pre-commit doc freshness check
 hooks/pre-commit-test-reminder.sh Context-aware test reminders on git commit
 agents/security-reviewer.md      Security review agent for Swift code changes
-agents/comment-reviewer.md       Inline comment audit agent for /end-session (Haiku)
+agents/comment-reviewer.md       Inline comment audit agent for /session-end (Haiku)
 agents/test-runner.md            Test execution agent for Swift suite
 skills/buddy-evolve/             Evolution skill (/buddy-evolve)
 skills/buddy-reset/              Reset skill (/buddy-reset)
@@ -28,8 +28,10 @@ skills/cache-clean/              Cache management skill (/cache-clean)
 skills/token-review/             Token optimization audit (/token-review)
 skills/sync-docs/                Documentation sync (/sync-docs)
 skills/start-session/            Dev session context (/start-session) — delegates to hook
-skills/end-session/              Pre-commit wrap-up (/end-session) — full test pipeline
-skills/session-deploy/           Post-merge sync + worktree cleanup (/session-deploy)
+skills/session-execute/          Plan → Execute transition (/session-execute) — model guidance
+skills/session-end/              Pre-commit wrap-up (/session-end) — tests + security review
+skills/session-deploy/           Post-merge sync + worktree cleanup (/session-deploy; --release publishes)
+skills/session-exit/             Pre-/exit checks + branch cleanup (/session-exit)
 scripts/BuddyPatcher/            Soul patching engine (Swift, zero dependencies)
 scripts/BuddyPatcher/Tests/      Unit test suite (~98 tests across 6 files)
 scripts/BuddyPatcher/Tests/Fixtures/  Golden files for CLI snapshot tests
@@ -48,6 +50,9 @@ scripts/test-ui-renderer.py      Standalone Python renderer (reference for /budd
 scripts/test-visual-smoke.sh     Manual pre-release visual check (interactive)
 scripts/test-all.sh              Master runner — all tiers, JSON/JUnit output
 scripts/upload-test-results.sh   Uploads results to GitHub as a Check Run
+scripts/bump-version.sh          Atomic version bump across plugin.json + marketplace.json + README badge
+scripts/update-changelog.sh      Move [Unreleased] content to dated [X.Y.Z] section in CHANGELOG.md
+scripts/setup-labels.sh          One-time GitHub label setup for new/forked repos
 ```
 
 ### How it works
@@ -132,7 +137,6 @@ All user-provided inputs are validated before any write operation:
 
 | Suite | Script | Tests | Purpose |
 |-------|--------|-------|---------|
-| Compatibility | `scripts/test-compatibility.sh` | ~27 | On-demand validation |
 | Performance | `scripts/test-perf.sh` | 7 | Timing benchmarks — catches catastrophic regressions only |
 
 Run everything: `scripts/test-all.sh` — emits `test-results/results.json`, `test-results/junit.xml`, and `test-results/full-output.log`. Local HTML coverage report: `bash scripts/coverage.sh` → `test-results/coverage/index.html`.
@@ -189,25 +193,34 @@ A `SessionEnd` hook in `hooks/hooks.json` runs `hooks/session-end.sh` when a Cla
 
 ### Skill: /start-session
 
-Manual re-trigger of the SessionStart hook. **Delegates to `hooks/session-start.sh`** so there is no parallel hardcoded list to drift.
+Manual re-trigger of the SessionStart hook. **Delegates to `hooks/session-start.sh`** so there is no parallel hardcoded list to drift. The hook output includes a **Session Lifecycle** roadmap (Phases 1–6) so the model and user always know where they are in the cycle.
 
-### Skill: /end-session
+### Skill: /session-execute
+
+Plan → Execute transition checkpoint. Run after a plan is approved (Plan Mode exit, `/superpowers:write-plan`, etc.). Confirms a plan exists, displays the model/effort recommendation table (Opus 4.6 Max for planning; Sonnet high for coding; per-agent haiku/inherit configs), restates plan scope for confirmation, and prints the "switch model and begin" transition message. Advisory only — Claude Code cannot switch models programmatically.
+
+### Skill: /session-end
 
 Pre-commit wrap-up. Run BEFORE clicking the Desktop App's "Commit Changes" button. Unconditional linear pipeline:
 1. Token review with `--apply --force`
 2. Full test pipeline via `scripts/test-all.sh` — all 6 tiers
 3. Upload results to GitHub as a Check Run via `scripts/upload-test-results.sh`
-4. Sync docs via `/sync-docs`
-5. Comment review via the `comment-reviewer` Haiku agent
-6. Unified summary table
+4. Security review via `security-reviewer` agent (conditional on Swift changes)
+5. Sync docs via `/sync-docs`
+6. Comment review via the `comment-reviewer` Haiku agent
+7. Unified summary table
 
 ### Skill: /session-deploy
 
-Post-merge sync and worktree cleanup. Run AFTER the PR is merged via the Desktop App's CI popup.
+Post-merge sync and worktree cleanup. Run AFTER the PR is merged via the Desktop App's CI popup. With `--release`, also runs Steps 9–12: bump version via `scripts/bump-version.sh`, move `[Unreleased]` to dated section via `scripts/update-changelog.sh`, tag + push (triggers `release.yml` → marketplace publish), verify local plugin reloads. Requires explicit user confirmation before pushing the tag.
+
+### Skill: /session-exit
+
+Pre-`/exit` cleanup. Run BEFORE typing `/exit`. Inventories worktrees + branches + open PRs, recommends merged-branch deletions (never force, always asks), warns about uncommitted work in other worktrees, and reports pending operations (unpushed commits, staged cleanup). Complements the `SessionEnd` hook which continues to handle automatic worktree cleanup via `scripts/process-pending-cleanup.sh`.
 
 ### Agent: comment-reviewer
 
-Haiku read-only agent used by `/end-session`. Audits inline code comments in recently changed files (Swift sources + shell scripts). Reports only — never edits.
+Haiku read-only agent used by `/session-end`. Audits inline code comments in recently changed files (Swift sources + shell scripts). Reports only — never edits.
 
 ### Skill: /buddy-status
 

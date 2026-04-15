@@ -1,7 +1,7 @@
 ---
 name: token-review
 description: This skill should be used when the user asks to "token review", "review tokens", "optimize tokens", "audit context size", "reduce token footprint", "session review", "end of session review", or "check token usage".
-argument-hint: "--apply (optional, applies optimizations), --force (optional, skips dirty-worktree check — used by /end-session)"
+argument-hint: "--apply (optional, applies optimizations), --force (optional, skips dirty-worktree check — used by /session-end)"
 ---
 
 # Token Review — Audit Plugin Context Footprint
@@ -102,7 +102,7 @@ cd "${CLAUDE_PLUGIN_ROOT}" && git status --short
 ```
 Warn if working tree has uncommitted changes. Ask user to confirm before proceeding.
 
-**Skip this check entirely if `--force` was passed.** The `--force` flag is used by `/end-session` which always runs against a dirty worktree (by design — it runs before commit). In that context, the token-review edits are intentionally bundled with the session's other changes.
+**Skip this check entirely if `--force` was passed.** The `--force` flag is used by `/session-end` which always runs against a dirty worktree (by design — it runs before commit). In that context, the token-review edits are intentionally bundled with the session's other changes.
 
 ### For each optimization opportunity:
 1. Create the target reference file (if extracting content)

@@ -314,6 +314,16 @@ $agents_block
 Hooks Active:
 $hooks_block
 
+Session Lifecycle:
+  Phase 1 → Plan      Start in Plan Mode (Opus 4.6 Max). Design before building.
+  Phase 2 → Execute   /session-execute — transition to code mode (Sonnet High)
+  Phase 3 → End       /session-end — tests, docs, security review, comment audit
+  Phase 4 → GitHub    Commit/PR/Merge via Desktop App buttons
+  Phase 5 → Deploy    /session-deploy [--release] — sync, cleanup, marketplace
+  Phase 6 → Exit      /session-exit — final checks, branch/worktree cleanup
+
+Current phase: Plan
+
 Constraints:
   1. BYTE-LENGTH: Every binary patch must produce identical byte length output
   2. 3-BYTE VARS: Species variables are exactly 3 bytes (e.g. GL_, vL_)

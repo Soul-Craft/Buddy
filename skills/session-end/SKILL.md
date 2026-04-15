@@ -1,5 +1,5 @@
 ---
-name: end-session
+name: session-end
 description: Use when wrapping up a dev session on Buddy Evolver before committing via the Desktop App. Runs the full test-all.sh pipeline, uploads results as a GitHub Check Run, applies token optimizations, syncs docs, and audits comments. Use when the user says "end session", "wrap up", "done for now", "finish up", "session done", "close out", or "ready to commit".
 ---
 
@@ -12,13 +12,14 @@ This skill is linear — no conditional branches. Every step runs every time. Th
 ## Running order
 
 1. **Token review (--apply --force)** — apply token optimizations to skills/configs
-2. **Full test pipeline** — `scripts/test-all.sh` (all 328 tests, 9 tiers)
+2. **Full test pipeline** — `scripts/test-all.sh` (~181 tests, 6 tiers)
 3. **Upload results as GitHub Check Run** — `scripts/upload-test-results.sh`
-4. **Sync docs** — fix drift in CLAUDE.md and README.md
-5. **Comment review** — Haiku agent audits inline comments in changed files
-6. **Summary report** — unified table with all results and next-step guidance
+4. **Security review (conditional)** — `security-reviewer` agent if Swift files changed
+5. **Sync docs** — fix drift in CLAUDE.md and README.md
+6. **Comment review** — Haiku agent audits inline comments in changed files
+7. **Summary report** — unified table with all results and next-step guidance
 
-Token review runs BEFORE tests so the test pipeline validates the optimized code. Comment review runs AFTER tests so only code that already passes tests is audited.
+Token review runs BEFORE tests so the test pipeline validates the optimized code. Security review runs AFTER tests because the Swift code needs to compile cleanly before security analysis is meaningful, and BEFORE docs sync so security issues get flagged before documentation describes them. Comment review runs AFTER tests so only code that already passes tests is audited.
 
 ## Step 1: Detect changes
 
@@ -46,7 +47,7 @@ Capture a file list for the comment-review step later.
 
 ## Step 2: Token review with auto-apply
 
-Run the token review skill with both `--apply` (execute the edits) and `--force` (bypass the dirty-worktree check — end-session always runs against a dirty worktree by design).
+Run the token review skill with both `--apply` (execute the edits) and `--force` (bypass the dirty-worktree check — session-end always runs against a dirty worktree by design).
 
 ```bash
 # Invoke /token-review --apply --force
@@ -61,7 +62,7 @@ Capture the reported savings (tokens freed, files modified). If the skill report
 
 ## Step 3: Full test pipeline
 
-Run all 9 tiers unconditionally. This is the same pipeline GitHub CI requires for merge.
+Run all 6 tiers unconditionally. This is the same pipeline GitHub CI requires for merge.
 
 ```bash
 cd "${CLAUDE_PLUGIN_ROOT}" && bash scripts/test-all.sh 2>&1
@@ -72,7 +73,7 @@ cd "${CLAUDE_PLUGIN_ROOT}" && bash scripts/test-all.sh 2>&1
 - `test-results/junit.xml` — JUnit-format report
 - `test-results/full-output.log` — captured stdout/stderr
 
-Parse `test-results/results.json` for the summary table. Expected: 328/328 passed in ~40s.
+Parse `test-results/results.json` for the summary table. Expected: ~181/~181 passed in ~30s.
 
 If any tier fails, continue the pipeline but mark the session as `FAIL` in the final summary and list the failing tier(s).
 
@@ -89,7 +90,19 @@ Handle three outcomes:
 - **No PR yet**: script reports "no PR for branch" — note "upload deferred, will happen after `git push`" in summary
 - **Tests failed in Step 3**: skip upload; flag in summary as "skipped (tests failed)"
 
-## Step 5: Sync docs
+## Step 5: Security review (conditional)
+
+If the changed file list from Step 1 includes any files under `scripts/BuddyPatcher/Sources/**/*.swift`, dispatch the `security-reviewer` agent (defined at `agents/security-reviewer.md`, model: inherit). Otherwise, skip this step with "skipped (no Swift changes)".
+
+Provide the agent with:
+- The list of changed Swift files from Step 1
+- Explicit instruction: "Read-only review. Report findings; do not apply edits."
+
+The agent returns a structured report with PASS/WARN/FAIL items across: input validation coverage, atomic-write usage, error handling in critical paths, and backup safety invariants.
+
+Capture counts: `N_pass`, `N_warn`, `N_fail`. Surface the summary for the unified report. If any `FAIL` items exist, mark the session as requiring attention — but continue the pipeline (non-blocking).
+
+## Step 6: Sync docs
 
 Invoke `/sync-docs` to detect and fix drift in CLAUDE.md and README.md. The skill uses the `docs-reviewer` agent internally.
 
@@ -98,7 +111,7 @@ Capture:
 - `N edits applied` — report counts per file
 - `drift detected, edits declined` — report the drift list for manual review
 
-## Step 6: Comment review (Haiku agent)
+## Step 7: Comment review (Haiku agent)
 
 Dispatch the `comment-reviewer` agent (defined at `agents/comment-reviewer.md`, model: haiku) to audit inline comments in the files changed during this session.
 
@@ -110,7 +123,7 @@ The agent returns a structured report with these sections: `MISSING_COMMENT`, `T
 
 Surface the summary's status (`CLEAN` or `REVIEW_NEEDED`). If `REVIEW_NEEDED`, show the top 5 flagged items verbatim and mention that the full report is available.
 
-## Step 7: Unified summary report
+## Step 8: Unified summary report
 
 Print this report exactly:
 
@@ -130,21 +143,22 @@ Token review (--apply --force):
 Full test suite (scripts/test-all.sh):
   Tier           Passed      Duration
   smoke          13/13       Xs
-  unit           178/178     Xs
-  security       27/27       Xs
-  integration    23/23       Xs
-  functional     19/19       Xs
+  unit           ~98/~98     Xs
+  security       ~25/~25     Xs
   ui             23/23       Xs
-  e2e            23/23       Xs
   snapshots      6/6         Xs
   docs           16/16       Xs
   ───────────────────────────────────
-  TOTAL          328/328     ~40s    ✅
+  TOTAL          ~181/~181   ~30s    ✅
 
 CI upload (Local Tests (macOS) Check Run):
   ✅ created: https://github.com/Soul-Craft/buddy-evolver/...
   [or] ⚠ deferred (no PR yet — will upload after first push)
   [or] ⏭  skipped (tests failed above)
+
+Security review:  ✅ N pass, K warnings
+                  [or]  ⚠ F failures (see list below)
+                  [or]  ⏭  skipped (no Swift changes)
 
 Doc sync:         ✅ clean  [or]  ✅ N edits applied across M files
 Comment review:   ✅ clean  [or]  ⚠ N flagged (see list below)
