@@ -574,13 +574,13 @@ bash scripts/test-all.sh
 | Snapshots | `scripts/test-snapshots.sh` | full-system | Golden file comparison for CLI output |
 | Docs | `scripts/test-docs.sh` | peripheral | Documentation path + link + count consistency |
 
-**CI** is local-first: `ci-quality.yml` runs on Ubuntu for every PR (shellcheck, JSON/YAML validation, hygiene checks). macOS-dependent tests run on contributor machines via `scripts/test-all.sh && scripts/upload-test-results.sh`; `ci-verify-local.yml` blocks merge until the upload appears and passes.
+**CI** is local-first: `ci-quality.yml` runs on Ubuntu for every PR (shellcheck, JSON/YAML validation, hygiene checks). macOS-dependent tests run on contributor machines via `scripts/test-all.sh && scripts/upload-test-results.sh`; `ci-verify-local.yml` blocks merge until a passing commit status appears. Run the upload after pushing but before opening the PR.
 
 Run everything locally:
 
 ```bash
 bash scripts/test-all.sh                # all 6 tiers, emits test-results/results.json
-bash scripts/upload-test-results.sh     # publish as GitHub Check Run on this commit
+bash scripts/upload-test-results.sh     # post commit status (run after push, before PR)
 bash scripts/coverage.sh                # local HTML coverage → test-results/coverage/index.html
 ```
 
@@ -600,8 +600,9 @@ rather than opening a public issue. See [SECURITY.md](SECURITY.md) for details.
 3. Make your changes
 4. Run `swift test --package-path scripts/BuddyPatcher && bash scripts/test-security.sh`
 5. Run `bash scripts/test-all.sh` — all 6 tiers must pass
-6. Run `bash scripts/upload-test-results.sh` to post results as a Check Run
-7. Open a PR against `main` — the [PR template](.github/PULL_REQUEST_TEMPLATE.md) will guide you
+6. Commit and push the branch
+7. Run `bash scripts/upload-test-results.sh` — posts commit status on the pushed commit
+8. Open a PR against `main` — `ci-verify-local.yml` will find the status immediately
 
 **Key constraints** — if you modify the Swift source in `scripts/BuddyPatcher/`:
 

@@ -176,4 +176,4 @@ use `findAll()`, assert byte-length, add `[DRY RUN]` branch, call
 - Swift changes trigger the `security-reviewer` agent (read-only, reviews for
   validation gaps, byte-length violations, unsafe patterns)
 - Maintainer checks byte-length invariant compliance on all patcher changes
-- CI must pass before merge: `ci-quality.yml` (lint/JSON/hygiene, runs on Ubuntu) and `ci-verify-local.yml` (confirms that `scripts/test-all.sh && scripts/upload-test-results.sh` has posted a passing Check Run on the head commit)
+- CI must pass before merge: `ci-quality.yml` (lint/JSON/hygiene, runs on Ubuntu) and `ci-verify-local.yml` (confirms that `scripts/test-all.sh && scripts/upload-test-results.sh` has posted a passing commit status on the head commit — run the upload after push, before opening the PR)

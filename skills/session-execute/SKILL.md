@@ -46,7 +46,7 @@ comment-reviewer   haiku         agents/comment-reviewer.md
 test-runner        haiku         agents/test-runner.md
 token-review       haiku         .claude-plugin/agents/token-review.md
 docs-reviewer      haiku         .claude-plugin/agents/docs-reviewer.md
-security-reviewer  inherit       agents/security-reviewer.md
+security-reviewer  sonnet        agents/security-reviewer.md
 cache-analyzer     inherit       .claude-plugin/agents/cache-analyzer.md
 ─────────────────────────────────────────────────────────
 ```

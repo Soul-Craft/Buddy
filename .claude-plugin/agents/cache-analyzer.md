@@ -1,6 +1,7 @@
 ---
 name: cache-analyzer
 description: Analyze disk usage, cache accumulation, and orphaned worktrees in the Buddy Evolver plugin. Use when asked to "analyze cache", "check disk usage", "find orphaned worktrees", or "cache report".
+model: inherit
 tools:
   - Bash
   - Read

@@ -12,6 +12,7 @@
 #   8. hooks/hooks.json shell scripts exist on disk
 #   9. Session workflow skills (session-end, session-deploy) only reference real files
 #  10. Retired skills (buddy, test-patch, update-species-map) stay retired
+#  11. session-execute agent model table matches all agent frontmatter
 #
 # Output: "Results: N passed, M failed" on the last line.
 set -uo pipefail
@@ -414,6 +415,80 @@ if [ "$forbidden_hits" -eq 0 ]; then
 else
     echo "  [FAIL] Retired skills must not return ($forbidden_hits finding(s)):"
     printf '%b\n' "$forbidden_list"
+    FAILED=$((FAILED + 1))
+fi
+
+echo
+
+# ── Group 11: Agent model table drift check ──────────────────────
+#
+# Validates that the agent model table in skills/session-execute/SKILL.md
+# matches the actual model: fields in each agent's frontmatter.
+# Prevents the table from silently drifting when an agent's model is changed.
+
+echo "  --- Group 11: Agent model table drift ---"
+echo
+
+drift_output=$(python3 - <<'PY'
+import re, pathlib, sys
+
+content = pathlib.Path("skills/session-execute/SKILL.md").read_text()
+
+# Find the code block that starts with "Component Model Recommendations"
+code_block_match = re.search(
+    r'```\nComponent Model Recommendations\n(.*?)```',
+    content, re.DOTALL
+)
+if not code_block_match:
+    print("ERROR: Could not find model table in skills/session-execute/SKILL.md")
+    sys.exit(1)
+
+table_text = code_block_match.group(1)
+
+# Agent rows follow the "Agent  Model  Configured in" header and its rule line,
+# and end before the next box-drawing rule line.
+agent_section_match = re.search(
+    r'Agent\s+Model\s+Configured in\n.+\n((?:.+\n)+)',
+    table_text
+)
+if not agent_section_match:
+    print("ERROR: Could not parse agent section from model table")
+    sys.exit(1)
+
+rows = []
+for line in agent_section_match.group(1).splitlines():
+    line = line.strip()
+    if not line or not line[0].isalpha():
+        break  # stop at closing rule line (box-drawing chars are not alpha)
+    parts = line.split()
+    if len(parts) >= 3:
+        rows.append((parts[0], parts[1], parts[2]))
+
+mismatches = []
+for agent_name, expected_model, agent_file in rows:
+    try:
+        agent_content = pathlib.Path(agent_file).read_text()
+        m = re.search(r'^model:\s*(\S+)', agent_content, re.MULTILINE)
+        actual = m.group(1) if m else "inherit"
+        if actual != expected_model:
+            mismatches.append(
+                f"{agent_name}: table={expected_model!r} frontmatter={actual!r} ({agent_file})"
+            )
+    except FileNotFoundError:
+        mismatches.append(f"{agent_name}: agent file missing: {agent_file}")
+
+for msg in mismatches:
+    print(f"  {msg}")
+sys.exit(1 if mismatches else 0)
+PY
+)
+drift_exit=$?
+
+if [ "$drift_exit" -eq 0 ]; then
+    assert_pass "Agent model table in /session-execute matches all agent frontmatter" "0"
+else
+    echo "  [FAIL] Agent model table drift detected:"
+    echo "$drift_output"
     FAILED=$((FAILED + 1))
 fi
 

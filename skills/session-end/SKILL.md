@@ -1,6 +1,6 @@
 ---
 name: session-end
-description: Use when wrapping up a dev session on Buddy Evolver before committing via the Desktop App. Runs the full test-all.sh pipeline, uploads results as a GitHub Check Run, applies token optimizations, syncs docs, and audits comments. Use when the user says "end session", "wrap up", "done for now", "finish up", "session done", "close out", or "ready to commit".
+description: Use when wrapping up a dev session on Buddy Evolver before committing via the Desktop App. Runs the full test-all.sh pipeline, applies token optimizations, syncs docs, and audits comments. Use when the user says "end session", "wrap up", "done for now", "finish up", "session done", "close out", or "ready to commit".
 ---
 
 # End Session — Pre-Commit Wrap-Up
@@ -13,13 +13,12 @@ This skill is linear — no conditional branches. Every step runs every time. Th
 
 1. **Token review (--apply --force)** — apply token optimizations to skills/configs
 2. **Full test pipeline** — `scripts/test-all.sh` (~181 tests, 6 tiers)
-3. **Upload results as GitHub Check Run** — `scripts/upload-test-results.sh`
-4. **Security review (conditional)** — `security-reviewer` agent if Swift files changed
-5. **Sync docs** — fix drift in CLAUDE.md and README.md
-6. **Comment review** — Haiku agent audits inline comments in changed files
-7. **Summary report** — unified table with all results and next-step guidance
+3. **Security review (conditional)** — `security-reviewer` agent if Swift files changed
+4. **Sync docs** — fix drift in CLAUDE.md and README.md
+5. **Comment review** — Haiku agent audits inline comments in changed files
+6. **Summary report** — unified table with all results and next-step guidance
 
-Token review runs BEFORE tests so the test pipeline validates the optimized code. Security review runs AFTER tests because the Swift code needs to compile cleanly before security analysis is meaningful, and BEFORE docs sync so security issues get flagged before documentation describes them. Comment review runs AFTER tests so only code that already passes tests is audited.
+Token review runs BEFORE tests so the test pipeline validates the optimized code. Security review runs AFTER tests because the Swift code needs to compile cleanly before security analysis is meaningful, and BEFORE docs sync so security issues get flagged before documentation describes them. Comment review runs AFTER tests so only code that already passes tests is audited. The GitHub upload (`scripts/upload-test-results.sh`) runs AFTER commit+push — not in this skill — because the new commit SHA doesn't exist until the Desktop App "Commit Changes" button is clicked.
 
 ## Step 1: Detect changes
 
@@ -77,20 +76,7 @@ Parse `test-results/results.json` for the summary table. Expected: ~181/~181 pas
 
 If any tier fails, continue the pipeline but mark the session as `FAIL` in the final summary and list the failing tier(s).
 
-## Step 4: Upload results to GitHub
-
-After `test-all.sh`, upload results so `ci-verify-local.yml` can see them:
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/upload-test-results.sh" 2>&1
-```
-
-Handle three outcomes:
-- **Success**: upload created a Check Run — capture the URL for the summary
-- **No PR yet**: script reports "no PR for branch" — note "upload deferred, will happen after `git push`" in summary
-- **Tests failed in Step 3**: skip upload; flag in summary as "skipped (tests failed)"
-
-## Step 5: Security review (conditional)
+## Step 3: Security review (conditional)
 
 If the changed file list from Step 1 includes any files under `scripts/BuddyPatcher/Sources/**/*.swift`, dispatch the `security-reviewer` agent (defined at `agents/security-reviewer.md`, model: inherit). Otherwise, skip this step with "skipped (no Swift changes)".
 
@@ -102,7 +88,7 @@ The agent returns a structured report with PASS/WARN/FAIL items across: input va
 
 Capture counts: `N_pass`, `N_warn`, `N_fail`. Surface the summary for the unified report. If any `FAIL` items exist, mark the session as requiring attention — but continue the pipeline (non-blocking).
 
-## Step 6: Sync docs
+## Step 4: Sync docs
 
 Invoke `/sync-docs` to detect and fix drift in CLAUDE.md and README.md. The skill uses the `docs-reviewer` agent internally.
 
@@ -111,7 +97,7 @@ Capture:
 - `N edits applied` — report counts per file
 - `drift detected, edits declined` — report the drift list for manual review
 
-## Step 7: Comment review (Haiku agent)
+## Step 5: Comment review (Haiku agent)
 
 Dispatch the `comment-reviewer` agent (defined at `agents/comment-reviewer.md`, model: haiku) to audit inline comments in the files changed during this session.
 
@@ -123,7 +109,7 @@ The agent returns a structured report with these sections: `MISSING_COMMENT`, `T
 
 Surface the summary's status (`CLEAN` or `REVIEW_NEEDED`). If `REVIEW_NEEDED`, show the top 5 flagged items verbatim and mention that the full report is available.
 
-## Step 8: Unified summary report
+## Step 6: Unified summary report
 
 Print this report exactly:
 
@@ -151,11 +137,6 @@ Full test suite (scripts/test-all.sh):
   ───────────────────────────────────
   TOTAL          ~181/~181   ~30s    ✅
 
-CI upload (Local Tests (macOS) Check Run):
-  ✅ created: https://github.com/Soul-Craft/buddy-evolver/...
-  [or] ⚠ deferred (no PR yet — will upload after first push)
-  [or] ⏭  skipped (tests failed above)
-
 Security review:  ✅ N pass, K warnings
                   [or]  ⚠ F failures (see list below)
                   [or]  ⏭  skipped (no Swift changes)
@@ -169,8 +150,10 @@ Git status:
   vs origin/main: N ahead, M behind
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Next: Use the Desktop App's "Commit Changes" button.
-CI will verify via ci-verify-local.yml using the Check Run above.
+Next: Use the Desktop App's "Commit Changes" button, then push.
+After pushing — BEFORE creating the PR — run:
+  bash scripts/upload-test-results.sh
+CI checks for this commit status the moment the PR is opened.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

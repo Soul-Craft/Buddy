@@ -1,22 +1,24 @@
 #!/bin/bash
-# Upload local test results as a GitHub Check Run.
+# Upload local test results as a GitHub commit status.
 #
 # Reads test-results/results.json (produced by test-all.sh) and creates a
-# Check Run on the current commit via the GitHub Checks API. This is the
-# local-to-CI bridge: macOS-dependent tests run on the contributor's machine,
-# but GitHub sees the pass/fail state alongside the Ubuntu-side quality checks.
+# commit status on the current commit via the GitHub Statuses API. This is
+# the local-to-CI bridge: macOS-dependent tests run on the contributor's
+# machine, but GitHub sees the pass/fail state alongside the Ubuntu-side
+# quality checks.
 #
 # Requires:
-#   - gh CLI authenticated with a token that has `checks:write` on the repo
+#   - gh CLI authenticated with a repo-scoped token (no GitHub App needed)
 #   - test-results/results.json from a prior test-all.sh run
-#   - Must be run from inside the repo (git rev-parse used to locate commit)
+#   - Must be run AFTER the commit is pushed — the commit SHA must exist on
+#     the remote before CI fires (run before opening the PR)
 #
 # Usage:
-#   scripts/upload-test-results.sh              # create Check Run on HEAD
+#   scripts/upload-test-results.sh              # post commit status on HEAD
 #   scripts/upload-test-results.sh --dry-run    # print payload, don't POST
 #
-# Fallback: if the Checks API isn't available (missing perms, no PR), the
-# script tries to comment on the current PR instead (gh pr comment).
+# Fallback: if the Statuses API fails, the script tries to comment on the
+# current PR instead (gh pr comment).
 
 set -uo pipefail
 
@@ -162,6 +164,8 @@ PY
 TITLE=$(echo "$SUMMARY_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['title'])")
 SUMMARY=$(echo "$SUMMARY_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['summary'])")
 CONCLUSION=$(echo "$SUMMARY_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['conclusion'])")
+TOTAL_PASSED=$(echo "$SUMMARY_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['total_passed'])")
+TOTAL_TESTS=$(echo "$SUMMARY_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['total_tests'])")
 
 echo
 echo "  Uploading test results for:"
@@ -172,49 +176,41 @@ echo "    title:      $TITLE"
 echo
 
 if [ "$DRY_RUN" -eq 1 ]; then
-    echo "  [DRY RUN] would POST to /repos/$REPO_SLUG/check-runs"
+    STATE=$( [ "$CONCLUSION" = "success" ] && echo "success" || echo "failure" )
+    echo "  [DRY RUN] would POST to /repos/$REPO_SLUG/statuses/$COMMIT_SHA"
+    echo "  state:       $STATE"
+    echo "  context:     Local Tests (macOS)"
+    echo "  description: $TOTAL_PASSED/$TOTAL_TESTS passed"
     echo
-    echo "  Summary body:"
-    echo "  ─────────────"
+    echo "  Summary body (PR comment fallback):"
+    echo "  ────────────────────────────────────"
     echo "$SUMMARY"
-    echo "  ─────────────"
+    echo "  ────────────────────────────────────"
     exit 0
 fi
 
-# ── Create Check Run via Checks API ────────────────────────────────
+# ── Create commit status via Statuses API ──────────────────────────
+# Works with any repo-scoped PAT — no GitHub App required.
 
-CHECK_RUN_PAYLOAD=$(python3 - <<PY
-import json
-print(json.dumps({
-    "name": "Local Tests (macOS)",
-    "head_sha": "$COMMIT_SHA",
-    "status": "completed",
-    "conclusion": "$CONCLUSION",
-    "output": {
-        "title": $(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$TITLE"),
-        "summary": $(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$SUMMARY"),
-    },
-}))
-PY
-)
+STATE=$( [ "$CONCLUSION" = "success" ] && echo "success" || echo "failure" )
+DESCRIPTION="$TOTAL_PASSED/$TOTAL_TESTS passed"
 
-# POST to Checks API. Capture response to detect permission failures.
-RESPONSE=$(echo "$CHECK_RUN_PAYLOAD" | gh api \
-    "repos/$REPO_SLUG/check-runs" \
+RESPONSE=$(gh api \
+    "repos/$REPO_SLUG/statuses/$COMMIT_SHA" \
     --method POST \
-    --input - 2>&1)
+    -f state="$STATE" \
+    -f context="Local Tests (macOS)" \
+    -f description="$DESCRIPTION" 2>&1)
 STATUS=$?
 
 if [ "$STATUS" -eq 0 ]; then
-    CHECK_URL=$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('html_url', ''))" 2>/dev/null || echo "")
-    echo "  [+] Check Run created"
-    [ -n "$CHECK_URL" ] && echo "      $CHECK_URL"
+    echo "  [+] Commit status posted (context: Local Tests (macOS), state: $STATE)"
     exit 0
 fi
 
 # ── Fallback: PR comment ────────────────────────────────────────────
 
-echo "  [!] Checks API failed (likely missing checks:write perm)"
+echo "  [!] Statuses API failed"
 echo "      Response: $RESPONSE" | head -3
 echo "  [~] Falling back to PR comment..."
 

@@ -29,7 +29,7 @@ description: Use this agent when code changes are made to BuddyPatcher Swift fil
   </commentary>
   </example>
 
-model: inherit
+model: sonnet
 color: red
 tools: ["Read", "Grep", "Glob"]
 ---

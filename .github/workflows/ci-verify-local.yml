@@ -2,14 +2,14 @@ name: Verify Local Tests
 
 # Checks that the contributor has run local tests and uploaded results.
 # Accepts two forms of evidence (in order of preference):
-#   1. A "Local Tests (macOS)" Check Run on the head commit (created by
-#      upload-test-results.sh when the token has checks:write via GitHub App)
+#   1. A "Local Tests (macOS)" commit status on the head commit (created by
+#      upload-test-results.sh using the Statuses API — works with any
+#      repo-scoped PAT, no GitHub App required)
 #   2. A PR comment from upload-test-results.sh containing the results table
-#      (fallback used when only a PAT is available -- public-repo Checks API
-#      requires GitHub App auth)
+#      (fallback used if the Statuses API call fails)
 #
 # If neither is found, posts a sticky comment asking the contributor to run
-# scripts/test-all.sh && scripts/upload-test-results.sh.
+# scripts/test-all.sh && scripts/upload-test-results.sh after pushing.
 #
 # SECURITY: All event data flows through env: variables. No direct
 # ${{ github.event.* }} interpolation in run: blocks.
@@ -41,22 +41,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          # ── Option 1: Check Run (requires GitHub App token) ────────
-          runs_json=$(gh api "repos/$REPO/commits/$HEAD_SHA/check-runs" --paginate)
-          status=$(echo "$runs_json" | python3 -c '
-          import json, sys
-          data = json.load(sys.stdin)
-          runs = data.get("check_runs", [])
-          matches = [r for r in runs if r.get("name") == "Local Tests (macOS)"]
-          if not matches:
-              print("missing")
-          else:
-              print(matches[0].get("conclusion", "unknown"))
-          ')
+          # ── Option 1: Commit status (any repo-scoped PAT) ──────────
+          state=$(gh api "repos/$REPO/commits/$HEAD_SHA/status" \
+              --jq '[.statuses[] | select(.context == "Local Tests (macOS)") | .state][0]' \
+              2>/dev/null || echo "")
 
-          if [ "$status" != "missing" ]; then
-              echo "status=$status" >> "$GITHUB_OUTPUT"
-              echo "Found Check Run with status: $status"
+          if [ -n "$state" ] && [ "$state" != "null" ]; then
+              echo "status=$state" >> "$GITHUB_OUTPUT"
+              echo "Found commit status: $state"
               exit 0
           fi
 
