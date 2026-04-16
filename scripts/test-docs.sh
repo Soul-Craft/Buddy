@@ -10,7 +10,7 @@
 #   6. CHANGELOG has an entry for the current plugin.json version
 #   7. skills/ directories each have a SKILL.md file
 #   8. hooks/hooks.json shell scripts exist on disk
-#   9. Session workflow skills (session-end, session-deploy) only reference real files
+#   9. Session workflow skills (session-review, session-deploy) only reference real files
 #  10. Retired skills (buddy, test-patch, update-species-map) stay retired
 #  11. session-execute agent model table matches all agent frontmatter
 #
@@ -317,7 +317,7 @@ echo
 
 # ── Group 9: Session workflow skills reference real files ────────
 #
-# /session-end and /session-deploy orchestrate multiple scripts, skills, and
+# /session-review and /session-deploy orchestrate multiple scripts, skills, and
 # agents. If any of those references rot (script renamed, skill deleted, agent
 # moved), the workflow silently falls apart. This check asserts every referenced
 # path resolves at test time — much faster than discovering the break at commit.
@@ -339,7 +339,7 @@ SESSION_DEPLOY_REFS=(
     "scripts/test-smoke.sh"
     "scripts/cache-clean.sh"
     "scripts/process-pending-cleanup.sh"
-    "hooks/session-end.sh"
+    "hooks/session-exit.sh"
 )
 
 # check_refs SKILL_NAME SKILL_MD_PATH REF1 REF2 ...
@@ -375,7 +375,7 @@ check_refs() {
     fi
 }
 
-check_refs "/session-end" "skills/session-end/SKILL.md" "${END_SESSION_REFS[@]}"
+check_refs "/session-review" "skills/session-review/SKILL.md" "${END_SESSION_REFS[@]}"
 check_refs "/session-deploy" "skills/session-deploy/SKILL.md" "${SESSION_DEPLOY_REFS[@]}"
 
 echo

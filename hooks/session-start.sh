@@ -169,7 +169,7 @@ discover_skills() {
   # Sort and print up to 15
   printf '%s\n' "${lines[@]}" | sort | head -15
   if (( total > 15 )); then
-    printf "  ... and %d more — run /start-session\n" $(( total - 15 ))
+    printf "  ... and %d more — run /session-start\n" $(( total - 15 ))
   fi
 }
 
@@ -220,10 +220,10 @@ root = sys.argv[1]
 # Friendly labels for known hook scripts — keeps the output human-readable.
 SCRIPT_LABELS = {
     "session-start.sh":           "session context injection",
-    "session-end.sh":             "worktree cleanup (auto)",
-    "validate-patcher-args.sh":   "argument validation",
-    "pre-commit-test-reminder.sh":"test reminders on commit",
-    "check-doc-freshness.sh":     "doc freshness on commit",
+    "session-exit.sh":            "worktree cleanup (auto)",
+    "guard-patcher-args.sh":      "argument validation",
+    "guard-commit-tests.sh":      "test reminders on commit",
+    "guard-commit-docs.sh":       "doc freshness on commit",
 }
 
 # Content-based fallbacks for inline bash commands (no script file).
@@ -317,7 +317,7 @@ $hooks_block
 Session Lifecycle:
   Phase 1 → Plan      Start in Plan Mode (Opus 4.6 Max). Design before building.
   Phase 2 → Execute   /session-execute — transition to code mode (Sonnet High)
-  Phase 3 → End       /session-end — tests, docs, security review, comment audit
+  Phase 3 → Review    /session-review — tests, docs, security review, comment audit
   Phase 4 → GitHub    Commit/PR/Merge via Desktop App buttons
   Phase 5 → Deploy    /session-deploy [--release] — sync, cleanup, marketplace
   Phase 6 → Exit      /session-exit — final checks, branch/worktree cleanup

@@ -31,7 +31,7 @@ if echo "$staged" | grep -qE '^scripts/BuddyPatcher/(Sources|Tests)/.*\.swift$';
 fi
 
 # Security-sensitive code changed → run test-security too
-if echo "$staged" | grep -qE '(Validation\.swift|validate-patcher-args\.sh|test-security\.sh)'; then
+if echo "$staged" | grep -qE '(Validation\.swift|guard-patcher-args\.sh|test-security\.sh)'; then
     reminders+=("make test-security — security-sensitive code changed (27 tests)")
 fi
 

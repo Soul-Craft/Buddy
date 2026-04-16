@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check-doc-freshness.sh — Pre-commit hook that checks if code files were
+# guard-commit-docs.sh — Pre-commit hook that checks if code files were
 # staged without corresponding documentation updates.
 #
 # Reads JSON tool input from stdin. If the command contains "git commit",

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# session-end.sh — best-effort cleanup of staged worktree removals on session exit.
+# session-exit.sh — best-effort cleanup of staged worktree removals on session exit.
 #
 # Fires when a Claude Code session ends (via /exit or window close).
 # Reads ~/.claude/buddy-evolver-cleanup-pending.json (written by /session-deploy)

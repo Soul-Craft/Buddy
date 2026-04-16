@@ -1,5 +1,5 @@
 ---
-name: token-review
+name: token-reviewer
 description: Audits all context-loaded plugin files for token optimization opportunities. Scans CLAUDE.md, settings files, and all SKILL.md files, evaluates them against the optimization checklist, and returns a structured report with findings and projected savings.
 tools: [Read, Glob, Grep, Bash]
 model: haiku

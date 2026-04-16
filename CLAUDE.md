@@ -7,16 +7,16 @@ Claude Code plugin that customizes the terminal Buddy companion by writing name 
 ```
 .claude-plugin/plugin.json       Plugin manifest (name, version, metadata)
 .claude-plugin/marketplace.json  Marketplace listing (for /plugin install)
-.claude-plugin/agents/           Subagents (cache-analyzer, docs-reviewer, token-review)
+.claude-plugin/agents/           Subagents (cache-reviewer, docs-reviewer, token-reviewer)
 .claude/settings.json            Permissions for common bash patterns
 hooks/hooks.json                 Plugin hooks (SessionStart + SessionEnd + PreToolUse)
 hooks/session-start.sh           SessionStart hook: dynamic dev context + pending cleanup retry
-hooks/session-end.sh             SessionEnd hook: automatic worktree self-cleanup on exit
-hooks/validate-patcher-args.sh   Security hook: validates patcher arguments
-hooks/check-doc-freshness.sh     Pre-commit doc freshness check
-hooks/pre-commit-test-reminder.sh Context-aware test reminders on git commit
+hooks/session-exit.sh            SessionEnd hook: automatic worktree self-cleanup on exit
+hooks/guard-patcher-args.sh      Security hook: validates patcher arguments
+hooks/guard-commit-docs.sh       Pre-commit doc freshness check
+hooks/guard-commit-tests.sh      Context-aware test reminders on git commit
 agents/security-reviewer.md      Security review agent for Swift code changes
-agents/comment-reviewer.md       Inline comment audit agent for /session-end (Haiku)
+agents/comment-reviewer.md       Inline comment audit agent for /session-review (Haiku)
 agents/test-runner.md            Test execution agent for Swift suite
 skills/buddy-evolve/             Evolution skill (/buddy-evolve)
 skills/buddy-reset/              Reset skill (/buddy-reset)
@@ -27,9 +27,9 @@ skills/security-audit/           Security posture audit (/security-audit)
 skills/cache-clean/              Cache management skill (/cache-clean)
 skills/token-review/             Token optimization audit (/token-review)
 skills/sync-docs/                Documentation sync (/sync-docs)
-skills/start-session/            Dev session context (/start-session) — delegates to hook
+skills/session-start/            Dev session context (/session-start) — delegates to hook
 skills/session-execute/          Plan → Execute transition (/session-execute) — model guidance
-skills/session-end/              Pre-commit wrap-up (/session-end) — tests + security review
+skills/session-review/           Pre-commit wrap-up (/session-review) — tests + security review
 skills/session-deploy/           Post-merge sync + worktree cleanup (/session-deploy; --release publishes)
 skills/session-exit/             Pre-/exit checks + branch cleanup (/session-exit)
 scripts/BuddyPatcher/            Soul patching engine (Swift, zero dependencies)
@@ -37,7 +37,7 @@ scripts/BuddyPatcher/Tests/      Unit test suite (~98 tests across 6 files)
 scripts/BuddyPatcher/Tests/Fixtures/  Golden files for CLI snapshot tests
 scripts/run-buddy-patcher.sh     Lazy-build wrapper (compiles Swift on first use)
 scripts/cache-clean.sh           Cache cleanup script (used by hook + skill)
-scripts/process-pending-cleanup.sh  Shared worktree cleanup retry logic (session-end + session-start hooks)
+scripts/process-pending-cleanup.sh  Shared worktree cleanup retry logic (session-exit + session-start hooks)
 scripts/lint.sh                  Local lint (shellcheck, JSON, frontmatter, hygiene)
 scripts/test-smoke.sh            Smoke tier: build sanity + CLI contract (<30s, 13 tests)
 scripts/test-security.sh         Security validation test suite (~25 tests)
@@ -114,7 +114,7 @@ All user-provided inputs are validated before any write operation:
 
 ### Layer 3: Plugin-level enforcement
 
-- **PreToolUse hook** (`hooks/validate-patcher-args.sh`): Intercepts Bash calls to the patcher, validates arguments for shell metacharacters (`;|&$\``), length limits, and subshell injection (`$()`)
+- **PreToolUse hook** (`hooks/guard-patcher-args.sh`): Intercepts Bash calls to the patcher, validates arguments for shell metacharacters (`;|&$\``), length limits, and subshell injection (`$()`)
 - **Security audit skill** (`/security-audit`): On-demand check of backup health, file permissions, and metadata integrity
 - **Security review agent** (`agents/security-reviewer.md`): Read-only agent that reviews Swift code changes for missing validation, non-atomic writes, and unsafe patterns
 
@@ -189,11 +189,11 @@ Four workflows in `.github/workflows/`:
 
 A `SessionStart` hook in `hooks/hooks.json` runs `hooks/session-start.sh` at the start of each Claude Code session. **Dynamic discovery**: parses frontmatter from every SKILL.md, agent markdown file, and hook definition to emit up-to-date lists with no hardcoded drift. Compares the current branch to `origin/main` via a cached `git fetch` (5-min TTL) and warns if >10 commits behind. Always exits 0 (never blocks session startup). Timeout: 10s.
 
-### Hook: session-end automatic cleanup
+### Hook: session-exit automatic cleanup
 
-A `SessionEnd` hook in `hooks/hooks.json` runs `hooks/session-end.sh` when a Claude Code session ends. Reads `~/.claude/buddy-evolver-cleanup-pending.json` (written by `/session-deploy`) and attempts to remove each staged worktree. Always exits 0. Timeout: 5s.
+A `SessionEnd` hook in `hooks/hooks.json` runs `hooks/session-exit.sh` when a Claude Code session ends. Reads `~/.claude/buddy-evolver-cleanup-pending.json` (written by `/session-deploy`) and attempts to remove each staged worktree. Always exits 0. Timeout: 5s.
 
-### Skill: /start-session
+### Skill: /session-start
 
 Manual re-trigger of the SessionStart hook. **Delegates to `hooks/session-start.sh`** so there is no parallel hardcoded list to drift. The hook output includes a **Session Lifecycle** roadmap (Phases 1–6) so the model and user always know where they are in the cycle.
 
@@ -201,7 +201,7 @@ Manual re-trigger of the SessionStart hook. **Delegates to `hooks/session-start.
 
 Plan → Execute transition checkpoint. Run after a plan is approved (Plan Mode exit, `/superpowers:write-plan`, etc.). Confirms a plan exists, displays the model/effort recommendation table (Opus 4.6 Max for planning; Sonnet high for coding; per-agent haiku/inherit configs), restates plan scope for confirmation, and prints the "switch model and begin" transition message. Advisory only — Claude Code cannot switch models programmatically.
 
-### Skill: /session-end
+### Skill: /session-review
 
 Pre-commit wrap-up. Run BEFORE clicking the Desktop App's "Commit Changes" button. Unconditional linear pipeline:
 1. Token review with `--apply --force`
@@ -225,7 +225,7 @@ Pre-`/exit` cleanup. Run BEFORE typing `/exit`. Inventories worktrees + branches
 
 ### Agent: comment-reviewer
 
-Haiku read-only agent used by `/session-end`. Audits inline code comments in recently changed files (Swift sources + shell scripts). Reports only — never edits.
+Haiku read-only agent used by `/session-review`. Audits inline code comments in recently changed files (Swift sources + shell scripts). Reports only — never edits.
 
 ### Agent: security-reviewer
 
@@ -249,7 +249,7 @@ A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls. If the comma
 
 ### Hook: pre-commit test reminder
 
-A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls containing `git commit`. Delegates to `hooks/pre-commit-test-reminder.sh`, which inspects staged files and injects context-aware reminders.
+A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls containing `git commit`. Delegates to `hooks/guard-commit-tests.sh`, which inspects staged files and injects context-aware reminders.
 
 ### Hook: doc freshness check
 
@@ -259,7 +259,7 @@ A `PreToolUse` hook in `hooks/hooks.json` fires on `git commit`. Checks if code 
 
 Manual cache management with interactive preview. Runs dry-run first, then cleans on confirmation.
 
-### Agent: cache-analyzer
+### Agent: cache-reviewer
 
 Deep cache analysis subagent. Scans for build artifacts, orphaned worktrees, backup sizes, and disk usage.
 
@@ -287,7 +287,7 @@ Compares actual project structure against CLAUDE.md and README.md using the `doc
 
 Haiku-powered subagent for building and running Swift tests. Parses output per suite and reports pass/fail with failure details.
 
-### Agent: token-review
+### Agent: token-reviewer
 
 Haiku-powered subagent for deep context footprint analysis.
 

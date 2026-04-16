@@ -14,7 +14,7 @@ Runs after the user merges their PR via the Desktop App's CI popup. Performs thr
 
 The current worktree cannot remove itself directly (Claude Code holds its CWD), so cleanup is two-phased:
 - `/session-deploy` writes `~/.claude/buddy-evolver-cleanup-pending.json` with the current worktree's details
-- The `SessionEnd` hook (`hooks/session-end.sh`) attempts removal when Claude Code exits
+- The `SessionEnd` hook (`hooks/session-exit.sh`) attempts removal when Claude Code exits
 - If that fails (Claude hasn't released CWD yet), the next `SessionStart` hook retries via the same helper
 
 This gives **automatic** cleanup with **guaranteed eventual completion**. The user's only action is `/exit`.
@@ -45,7 +45,7 @@ PR_JSON=$(gh pr list --state merged --head "$BRANCH" \
 
 Handle three cases:
 - **Merged PR found** → proceed. Capture: number, title, mergedAt, mergeCommit
-- **No merged PR, but an open PR exists for the branch** → `gh pr list --state open --head "$BRANCH"`. If found, stop with: "PR #N is still open. Run `/session-end` first, then merge via the Desktop App, then re-run `/session-deploy`."
+- **No merged PR, but an open PR exists for the branch** → `gh pr list --state open --head "$BRANCH"`. If found, stop with: "PR #N is still open. Run `/session-review` first, then merge via the Desktop App, then re-run `/session-deploy`."
 - **No PR at all** → stop with: "No PR found for branch `$BRANCH`. Did you push and open a PR?"
 
 ## Step 3: Sync local main

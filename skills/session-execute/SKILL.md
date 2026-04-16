@@ -44,10 +44,10 @@ Agent              Model         Configured in
 ─────────────────────────────────────────────────────────
 comment-reviewer   haiku         agents/comment-reviewer.md
 test-runner        haiku         agents/test-runner.md
-token-review       haiku         .claude-plugin/agents/token-review.md
+token-reviewer     haiku         .claude-plugin/agents/token-reviewer.md
 docs-reviewer      haiku         .claude-plugin/agents/docs-reviewer.md
 security-reviewer  sonnet        agents/security-reviewer.md
-cache-analyzer     inherit       .claude-plugin/agents/cache-analyzer.md
+cache-reviewer     inherit       .claude-plugin/agents/cache-reviewer.md
 ─────────────────────────────────────────────────────────
 ```
 
@@ -75,7 +75,7 @@ Phase 2: Execute
 Model: switch to Sonnet (high) in the Desktop App dropdown
         if you are currently on Opus.
 Next:  begin implementing the plan.
-End:   run /session-end when code is ready for review.
+Review: run /session-review when code is ready for review.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

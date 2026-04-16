@@ -1,11 +1,11 @@
 ---
 name: session-exit
-description: Use BEFORE typing /exit to run final session checks, inventory and clean up merged branches, report pending work, and prepare for a clean session exit. Use when the user says "exit session", "session exit", "final checks", "ready to exit", or "clean up and exit".
+description: Pre-/exit cleanup for Buddy Evolver — inventories worktrees and merged branches, reports unpushed commits and open PRs, prepares for clean session termination. Use when the user says "exit session", "session exit", "before exit", "ready to exit", "clean up and exit", or "final checks before exit". This is NOT the pre-commit pipeline — for "session end", "wrap up", "ready to commit", or any test/docs/security work before committing, use /session-review instead.
 ---
 
 # Session Exit — Pre-Exit Cleanup & Final Checks
 
-Run this skill **before** typing `/exit` to tidy up branches, review pending work, and make sure nothing important is dropped when the session ends. The automatic `SessionEnd` hook (`hooks/session-end.sh`) handles worktree cleanup for the current worktree, but it cannot report on dirty worktrees elsewhere, unpushed commits, or open PRs — those checks live here.
+Run this skill **before** typing `/exit` to tidy up branches, review pending work, and make sure nothing important is dropped when the session ends. The automatic `SessionEnd` hook (`hooks/session-exit.sh`) handles worktree cleanup for the current worktree, but it cannot report on dirty worktrees elsewhere, unpushed commits, or open PRs — those checks live here.
 
 This skill is intentionally interactive: it never deletes branches without explicit confirmation.
 
@@ -59,7 +59,7 @@ git -C "$path" status --porcelain 2>/dev/null
 ```
 
 If any worktree has uncommitted changes, warn:
-> "Worktree `<path>` has N uncommitted files. If this work should be committed, run `/session-end` in that worktree first. Exiting now will not lose the work, but it will remain uncommitted."
+> "Worktree `<path>` has N uncommitted files. If this work should be committed, run `/session-review` in that worktree first. Exiting now will not lose the work, but it will remain uncommitted."
 
 ## Step 4: Check for pending operations
 
@@ -102,7 +102,7 @@ Pending work:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Type /exit to close the session.
 Worktree cleanup runs automatically on exit via the
-SessionEnd hook (hooks/session-end.sh). If it cannot
+SessionEnd hook (hooks/session-exit.sh). If it cannot
 remove the current worktree (Claude still holds CWD),
 the next SessionStart will retry.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -114,7 +114,7 @@ Above the report, surface a short banner with the highest-priority warning:
 
 ```
 ⚠ N uncommitted files in worktree <path>
-  → Run /session-end there first, or exit to preserve as-is
+  → Run /session-review there first, or exit to preserve as-is
 ```
 
 ### If everything is clean
@@ -127,7 +127,7 @@ Above the report, show:
 
 ## Notes for future maintenance
 
-- **Do not modify `hooks/session-end.sh`.** That hook's contract is: runs non-interactively, exits 0 within 5 seconds, cleans staged worktrees only. Additional checks belong here.
+- **Do not modify `hooks/session-exit.sh`.** That hook's contract is: runs non-interactively, exits 0 within 5 seconds, cleans staged worktrees only. Additional checks belong here.
 - **Never force-delete branches.** Use `-d`, not `-D`. If a merged-check fooled itself on a squash merge, `-d` will refuse and the user can intervene.
 - **`gh` may be unavailable.** If `gh pr list` fails, continue with the other checks and note "open PR count unavailable" in the report.
 - **This skill reads from `~/.claude/buddy-evolver-cleanup-pending.json`** which is written by `/session-deploy`. The schema is defined in `scripts/process-pending-cleanup.sh`.

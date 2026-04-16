@@ -373,20 +373,20 @@ Everything below is for contributors and developers working on the plugin itself
 .claude-plugin/
   plugin.json                     Plugin manifest (name, version, metadata)
   marketplace.json                Marketplace listing
-  agents/                         Plugin agents (cache-analyzer, docs-reviewer, token-review)
+  agents/                         Plugin agents (cache-reviewer, docs-reviewer, token-reviewer)
 .claude/settings.json             Permissions for common bash patterns
 .github/workflows/                CI workflows (quality, verify-local, macos-fallback, release)
 agents/
   security-reviewer.md            Security review agent for Swift changes
-  comment-reviewer.md             Inline comment audit agent for /session-end (Haiku)
+  comment-reviewer.md             Inline comment audit agent for /session-review (Haiku)
   test-runner.md                  Test execution agent
 hooks/
   hooks.json                      Hook definitions (SessionStart + SessionEnd + PreToolUse)
   session-start.sh                Dynamic dev context injection at session startup
-  session-end.sh                  Automatic worktree self-cleanup on exit
-  validate-patcher-args.sh        Shell injection prevention for patcher args
-  check-doc-freshness.sh          Pre-commit doc sync reminder
-  pre-commit-test-reminder.sh     Context-aware test reminders on git commit
+  session-exit.sh                 Automatic worktree self-cleanup on exit
+  guard-patcher-args.sh           Shell injection prevention for patcher args
+  guard-commit-docs.sh            Pre-commit doc sync reminder
+  guard-commit-tests.sh           Context-aware test reminders on git commit
 scripts/
   BuddyPatcher/                   Swift soul-patching engine (zero dependencies)
     Package.swift                 SPM manifest (Swift 5.9, macOS 13+)
@@ -396,7 +396,7 @@ scripts/
     Tests/Fixtures/               Golden files for CLI snapshot tests
   run-buddy-patcher.sh            Lazy-build wrapper (compiles on first use)
   cache-clean.sh                  Cache cleanup utility
-  process-pending-cleanup.sh      Shared worktree cleanup retry (session-end + session-start hooks)
+  process-pending-cleanup.sh      Shared worktree cleanup retry (session-exit + session-start hooks)
   lint.sh                         Local lint (shellcheck, JSON, frontmatter, hygiene)
   test-smoke.sh                   Smoke tier: build sanity + CLI contract (<30s)
   test-security.sh                Security validation test suite
@@ -451,8 +451,8 @@ The plugin ships 14 skills, 6 agents, and 5 hooks:
 | `/cache-clean` | Interactive cache management with dry-run preview |
 | `/token-review` | 5-phase context footprint audit with optimization recommendations |
 | `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
-| `/start-session` | Refresh dev context (delegates to SessionStart hook — no hardcoded list to drift) |
-| `/session-end` | Pre-commit wrap-up: token review → test-all → upload Check Run → sync docs → comment audit |
+| `/session-start` | Refresh dev context (delegates to SessionStart hook — no hardcoded list to drift) |
+| `/session-review` | Pre-commit wrap-up: token review → test-all → upload Check Run → sync docs → comment audit |
 | `/session-deploy` | Post-merge: sync local main, verify smoke, clean other worktrees, stage self-cleanup for `/exit` |
 | `/session-execute` | Plan → Execute transition: prints model/effort recommendations and restates approved plan scope |
 | `/session-exit` | Pre-`/exit` checks: inventory branches and worktrees, recommend merged-branch deletions, warn about uncommitted work |
@@ -465,11 +465,11 @@ The plugin ships 14 skills, 6 agents, and 5 hooks:
 | Agent | Purpose |
 |-------|---------|
 | `security-reviewer` | Reviews Swift code for validation gaps and unsafe patterns |
-| `comment-reviewer` | Haiku read-only audit of inline comments in changed files — used by `/session-end` |
+| `comment-reviewer` | Haiku read-only audit of inline comments in changed files — used by `/session-review` |
 | `test-runner` | Builds and runs Swift tests, parses per-suite results |
-| `cache-analyzer` | Scans build artifacts, orphaned worktrees, backup sizes, disk usage |
+| `cache-reviewer` | Scans build artifacts, orphaned worktrees, backup sizes, disk usage |
 | `docs-reviewer` | Detects documentation gaps, stale entries, and path mismatches |
-| `token-review` | Context footprint analysis with optimization scoring |
+| `token-reviewer` | Context footprint analysis with optimization scoring |
 
 </details>
 

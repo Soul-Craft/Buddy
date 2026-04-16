@@ -1,5 +1,5 @@
 ---
-name: start-session
+name: session-start
 description: Use when starting a dev session on Buddy Evolver, or to refresh project context. Use when the user says "start session", "refresh context", "what tools do I have", or "session status".
 ---
 

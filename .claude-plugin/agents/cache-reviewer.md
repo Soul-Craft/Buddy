@@ -1,5 +1,5 @@
 ---
-name: cache-analyzer
+name: cache-reviewer
 description: Analyze disk usage, cache accumulation, and orphaned worktrees in the Buddy Evolver plugin. Use when asked to "analyze cache", "check disk usage", "find orphaned worktrees", or "cache report".
 model: inherit
 tools:
@@ -9,7 +9,7 @@ tools:
   - Grep
 ---
 
-# Cache Analyzer Agent
+# Cache Reviewer Agent
 
 You are analyzing cache and disk usage for the Buddy Evolver Claude Code plugin. Produce a comprehensive report covering build artifacts, worktrees, backups, and cleanup recommendations.
 
