@@ -118,7 +118,7 @@ Then
 /plugin install buddy-evolver@soul-craft
 ```
 
-This adds slash commands including `/buddy-evolve`, `/buddy-reset`, `/buddy-status`, and `/security-audit`.
+This adds slash commands including `/buddy-evolve`, `/buddy-reset`, `/buddy-status`, and `/audit-security`.
 
 ---
 
@@ -208,7 +208,7 @@ All evolved buddies are ✨ shiny by default. A backup of your original companio
 - Safe to run anytime — does nothing if no backup exists
 - No restart needed — changes take effect on your next conversation
 
-### `/security-audit`
+### `/audit-security`
 
 🛡️ Health check for your buddy's state. Verifies:
 
@@ -440,7 +440,7 @@ The plugin ships 14 skills, 6 agents, and 5 hooks:
 | `/buddy-evolve` | Interactive 4-act evolution — species, rarity, emoji, name, personality, stats |
 | `/buddy-reset` | Restore original companion data from soul backup |
 | `/buddy-status` | Display current buddy as a visual card |
-| `/security-audit` | 7-point backup health and permission check |
+| `/audit-security` | 7-point backup health and permission check |
 
 **Developer-facing:**
 
@@ -448,8 +448,8 @@ The plugin ships 14 skills, 6 agents, and 5 hooks:
 |-------|-------------|
 | `/run-tests` | Run Swift test suite with per-suite reporting |
 | `/run-all-tests` | Run the full 6-tier pipeline via `test-all.sh` with per-tier summary table |
-| `/cache-clean` | Interactive cache management with dry-run preview |
-| `/token-review` | 5-phase context footprint audit with optimization recommendations |
+| `/clean-cache` | Interactive cache management with dry-run preview |
+| `/review-token` | 5-phase context footprint audit with optimization recommendations |
 | `/sync-docs` | Compare project structure against CLAUDE.md and README.md, fix gaps |
 | `/session-start` | Refresh dev context (delegates to SessionStart hook — no hardcoded list to drift) |
 | `/session-review` | Pre-commit wrap-up: token review → test-all → upload Check Run → sync docs → comment audit |
@@ -516,7 +516,7 @@ All user-provided inputs are validated before any write operation:
 **Layer 3: Plugin-level enforcement**
 
 - **PreToolUse hook** intercepts Bash calls to the patcher, validates for shell metacharacters (`;|&$\``), length limits, and `$()` subshell injection
-- **Security audit skill** (`/security-audit`) provides on-demand backup health and permission checking
+- **Security audit skill** (`/audit-security`) provides on-demand backup health and permission checking
 - **Security review agent** reviews Swift code changes for missing validation and unsafe patterns
 
 </details>

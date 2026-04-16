@@ -1,5 +1,5 @@
 ---
-name: security-audit
+name: audit-security
 description: This skill should be used when the user asks to "security audit", "check security", "audit buddy", "check backup health", "verify backup", or "security check".
 ---
 

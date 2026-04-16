@@ -43,7 +43,7 @@ For each gap found, apply the appropriate fix:
 **MISSING_FROM_DOCS (skill):**
 - Add entry to the file tree section (match existing format: `skills/<name>/    Description (/skill-name)`)
 - Add a `### Skill: /skill-name` entry in the Automations section — read the skill's SKILL.md to write an accurate one-line description
-- If user-facing (buddy-evolve, buddy-reset, buddy-status, security-audit), also add to README.md Commands section
+- If user-facing (buddy-evolve, buddy-reset, buddy-status, audit-security), also add to README.md Commands section
 
 **MISSING_FROM_DOCS (agent):**
 - Add entry to the file tree section

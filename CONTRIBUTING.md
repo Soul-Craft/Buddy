@@ -126,7 +126,7 @@ disable-model-invocation: true  # only for non-conversational skills
 ### Bug reports
 
 Use the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) template. Include
-your Claude Code version, macOS version, and the output of `/security-audit` so
+your Claude Code version, macOS version, and the output of `/audit-security` so
 the buddy backup and metadata state is visible to whoever triages the issue.
 
 ### Feature requests

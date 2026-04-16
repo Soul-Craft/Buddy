@@ -1,5 +1,5 @@
 ---
-name: cache-clean
+name: clean-cache
 description: This skill should be used when the user asks to "clean cache", "cache clean", "clear build cache", "free disk space", "clean up", "remove build artifacts", "clean .build", "manage cache", or "show cache size".
 ---
 
