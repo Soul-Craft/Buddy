@@ -90,6 +90,21 @@ jobs:
         if: steps.check.outputs.status == 'success'
         run: echo "Local tests verified (status=success)"
 
+      - name: Clean up stale sticky comment on success
+        if: steps.check.outputs.status == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          existing=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+            --jq '.[] | select(.body | startswith("## Local tests")) | .id' | head -1)
+          if [ -n "$existing" ]; then
+            gh api "repos/$REPO/issues/comments/$existing" --method DELETE
+            echo "Deleted stale sticky comment $existing"
+          fi
+
       - name: Post sticky comment if missing or failed
         if: steps.check.outputs.status == 'missing' || steps.check.outputs.status == 'failure'
         env:
