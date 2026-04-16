@@ -27,7 +27,7 @@ For each file, record: path, line count, character count, estimated tokens (char
 
 ## Step 2: Read the optimization checklist
 
-Read `skills/token-review/references/optimization-checklist.md` for the full list of checks to evaluate.
+Read `skills/review-token/references/optimization-checklist.md` for the full list of checks to evaluate.
 
 ## Step 3: Evaluate each check
 

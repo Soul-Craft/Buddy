@@ -92,4 +92,4 @@ Recommendations:
 - [actionable items based on findings]
 ```
 
-Recommend running `/cache-clean` if significant cache is found. Flag orphaned worktrees for manual review.
+Recommend running `/clean-cache` if significant cache is found. Flag orphaned worktrees for manual review.

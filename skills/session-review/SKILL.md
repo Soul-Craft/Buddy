@@ -49,7 +49,7 @@ Capture a file list for the comment-review step later.
 Run the token review skill with both `--apply` (execute the edits) and `--force` (bypass the dirty-worktree check — session-review always runs against a dirty worktree by design).
 
 ```bash
-# Invoke /token-review --apply --force
+# Invoke /review-token --apply --force
 # The skill will:
 #  - Inventory context-loaded files
 #  - Identify optimization opportunities

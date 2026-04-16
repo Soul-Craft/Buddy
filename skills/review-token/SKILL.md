@@ -1,5 +1,5 @@
 ---
-name: token-review
+name: review-token
 description: This skill should be used when the user asks to "token review", "review tokens", "optimize tokens", "audit context size", "reduce token footprint", "session review", "end of session review", or "check token usage".
 argument-hint: "--apply (optional, applies optimizations), --force (optional, skips dirty-worktree check — used by /session-review)"
 ---
@@ -41,7 +41,7 @@ Present the output as a formatted table. Calculate totals for always-loaded and 
 
 Read the optimization checklist:
 ```
-Read ${CLAUDE_PLUGIN_ROOT}/skills/token-review/references/optimization-checklist.md
+Read ${CLAUDE_PLUGIN_ROOT}/skills/review-token/references/optimization-checklist.md
 ```
 
 For each check (A1 through E1), evaluate the target file against the described pattern:
@@ -102,7 +102,7 @@ cd "${CLAUDE_PLUGIN_ROOT}" && git status --short
 ```
 Warn if working tree has uncommitted changes. Ask user to confirm before proceeding.
 
-**Skip this check entirely if `--force` was passed.** The `--force` flag is used by `/session-review` which always runs against a dirty worktree (by design — it runs before commit). In that context, the token-review edits are intentionally bundled with the session's other changes.
+**Skip this check entirely if `--force` was passed.** The `--force` flag is used by `/session-review` which always runs against a dirty worktree (by design — it runs before commit). In that context, the review-token edits are intentionally bundled with the session's other changes.
 
 ### For each optimization opportunity:
 1. Create the target reference file (if extracting content)
@@ -139,4 +139,4 @@ cd "${CLAUDE_PLUGIN_ROOT}" && git diff --stat
 
 ## If No `--apply`
 
-End after Phase 3 (the report). Remind the user they can run `/token-review --apply` to execute the optimizations, or apply individual items manually.
+End after Phase 3 (the report). Remind the user they can run `/review-token --apply` to execute the optimizations, or apply individual items manually.

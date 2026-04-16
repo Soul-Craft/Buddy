@@ -23,9 +23,9 @@ skills/buddy-reset/              Reset skill (/buddy-reset)
 skills/buddy-status/             Buddy card display (/buddy-status)
 skills/run-tests/                Swift test runner (/run-tests)
 skills/run-all-tests/            Full pipeline runner (/run-all-tests)
-skills/security-audit/           Security posture audit (/security-audit)
-skills/cache-clean/              Cache management skill (/cache-clean)
-skills/token-review/             Token optimization audit (/token-review)
+skills/audit-security/           Security posture audit (/audit-security)
+skills/clean-cache/              Cache management skill (/clean-cache)
+skills/review-token/             Token optimization audit (/review-token)
 skills/sync-docs/                Documentation sync (/sync-docs)
 skills/session-start/            Dev session context (/session-start) — delegates to hook
 skills/session-execute/          Plan → Execute transition (/session-execute) — model guidance
@@ -115,7 +115,7 @@ All user-provided inputs are validated before any write operation:
 ### Layer 3: Plugin-level enforcement
 
 - **PreToolUse hook** (`hooks/guard-patcher-args.sh`): Intercepts Bash calls to the patcher, validates arguments for shell metacharacters (`;|&$\``), length limits, and subshell injection (`$()`)
-- **Security audit skill** (`/security-audit`): On-demand check of backup health, file permissions, and metadata integrity
+- **Security audit skill** (`/audit-security`): On-demand check of backup health, file permissions, and metadata integrity
 - **Security review agent** (`agents/security-reviewer.md`): Read-only agent that reviews Swift code changes for missing validation, non-atomic writes, and unsafe patterns
 
 ## Testing
@@ -255,7 +255,7 @@ A `PreToolUse` hook in `hooks/hooks.json` fires on Bash tool calls containing `g
 
 A `PreToolUse` hook in `hooks/hooks.json` fires on `git commit`. Checks if code files were staged without corresponding updates to `CLAUDE.md` or `README.md`.
 
-### Skill: /cache-clean
+### Skill: /clean-cache
 
 Manual cache management with interactive preview. Runs dry-run first, then cleans on confirmation.
 
@@ -263,7 +263,7 @@ Manual cache management with interactive preview. Runs dry-run first, then clean
 
 Deep cache analysis subagent. Scans for build artifacts, orphaned worktrees, backup sizes, and disk usage.
 
-### Skill: /security-audit
+### Skill: /audit-security
 
 Runs a focused security audit: soul backup health, file permissions, companion data presence, and metadata schema validation.
 
@@ -275,7 +275,7 @@ Runs `swift test` in `scripts/BuddyPatcher/`, parses results per suite, and repo
 
 Runs the full 6-tier test pipeline via `scripts/test-all.sh`, reads `test-results/results.json`, and reports a per-tier summary table. Non-conversational (`disable-model-invocation: true`).
 
-### Skill: /token-review
+### Skill: /review-token
 
 5-phase audit of plugin context footprint. Inventories all context-loaded files, evaluates against an optimization checklist. Optional `--apply` flag for automated optimization.
 

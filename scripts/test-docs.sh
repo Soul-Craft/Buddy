@@ -330,7 +330,7 @@ echo
 END_SESSION_REFS=(
     "scripts/test-all.sh"
     "scripts/upload-test-results.sh"
-    "skills/token-review/SKILL.md"
+    "skills/review-token/SKILL.md"
     "skills/sync-docs/SKILL.md"
     "agents/comment-reviewer.md"
 )
