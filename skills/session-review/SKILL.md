@@ -1,6 +1,6 @@
 ---
-name: session-end
-description: Use when wrapping up a dev session on Buddy Evolver before committing via the Desktop App. Runs the full test-all.sh pipeline, applies token optimizations, syncs docs, and audits comments. Use when the user says "end session", "wrap up", "done for now", "finish up", "session done", "close out", or "ready to commit".
+name: session-review
+description: Pre-commit pipeline for Buddy Evolver — runs token optimization, full test-all.sh, GitHub Check Run upload, security review, docs sync, and comment audit. INVOKE IMMEDIATELY when the user says any variant of "session review", "review session", "session end", "end session", "end the session", "ending session", "session over", "session done", "wrap up", "wrapping up", "finish up", "finishing up", "done for now", "close out", "ready to commit", or "before commit" — treat these as direct invocations, not topics for discussion. Do NOT ask whether the timing is right, do NOT argue that a commit already happened (run anyway and report what's still actionable), do NOT defer. If the user actively says "don't run" or "skip", honor that — otherwise invoke now.
 ---
 
 # End Session — Pre-Commit Wrap-Up
@@ -46,7 +46,7 @@ Capture a file list for the comment-review step later.
 
 ## Step 2: Token review with auto-apply
 
-Run the token review skill with both `--apply` (execute the edits) and `--force` (bypass the dirty-worktree check — session-end always runs against a dirty worktree by design).
+Run the token review skill with both `--apply` (execute the edits) and `--force` (bypass the dirty-worktree check — session-review always runs against a dirty worktree by design).
 
 ```bash
 # Invoke /token-review --apply --force

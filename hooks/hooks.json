@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-exit.sh\"",
             "timeout": 5
           }
         ]
@@ -29,17 +29,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/validate-patcher-args.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/guard-patcher-args.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pre-commit-test-reminder.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/guard-commit-tests.sh",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/check-doc-freshness.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/guard-commit-docs.sh",
             "timeout": 5
           }
         ]

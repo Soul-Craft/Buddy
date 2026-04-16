@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # process-pending-cleanup.sh — attempt to complete any staged worktree removals.
 #
-# Called by both hooks/session-end.sh (on session exit) and hooks/session-start.sh
+# Called by both hooks/session-exit.sh (on session exit) and hooks/session-start.sh
 # (safety net on session start). Reads ~/.claude/buddy-evolver-cleanup-pending.json,
 # tries to remove each staged worktree, rewrites the file with any that still failed.
 #

@@ -5,7 +5,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/BuddyPatcher/.build/release/buddy-patcher"
-HOOK="$SCRIPT_DIR/../hooks/validate-patcher-args.sh"
+HOOK="$SCRIPT_DIR/../hooks/guard-patcher-args.sh"
 PASS=0
 FAIL=0
 
@@ -102,7 +102,7 @@ echo
 
 # ── Hook validation ────────────────────────────────────────────────
 if [ -f "$HOOK" ]; then
-  echo "  --- Hook Validation (validate-patcher-args.sh) ---"
+  echo "  --- Hook Validation (guard-patcher-args.sh) ---"
   echo
 
   # Non-patcher commands pass through

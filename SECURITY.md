@@ -36,7 +36,7 @@ These files have outsized security impact — reports here are especially welcom
 | `scripts/BuddyPatcher/Sources/BuddyPatcherLib/Validation.swift` | All user-input validation |
 | `scripts/BuddyPatcher/Sources/BuddyPatcherLib/BackupRestore.swift` | Backup integrity, SHA-256 verification |
 | `scripts/BuddyPatcher/Sources/BuddyPatcherLib/PatchEngine.swift` | Binary modification |
-| `hooks/validate-patcher-args.sh` | Shell injection prevention |
+| `hooks/guard-patcher-args.sh` | Shell injection prevention |
 | `scripts/test-security.sh` | Security test suite |
 
 ## Security Design Principles

@@ -42,7 +42,7 @@ For each discovered item, verify it is properly documented:
 
 **Agents** must appear in:
 - CLAUDE.md file tree (with correct location: `agents/` vs `.claude-plugin/agents/`)
-- CLAUDE.md Automations section (e.g., `### Agent: cache-analyzer`)
+- CLAUDE.md Automations section (e.g., `### Agent: cache-reviewer`)
 
 **Hooks** must appear in:
 - CLAUDE.md file tree (hook scripts)

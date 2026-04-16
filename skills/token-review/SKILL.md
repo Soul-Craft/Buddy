@@ -1,7 +1,7 @@
 ---
 name: token-review
 description: This skill should be used when the user asks to "token review", "review tokens", "optimize tokens", "audit context size", "reduce token footprint", "session review", "end of session review", or "check token usage".
-argument-hint: "--apply (optional, applies optimizations), --force (optional, skips dirty-worktree check — used by /session-end)"
+argument-hint: "--apply (optional, applies optimizations), --force (optional, skips dirty-worktree check — used by /session-review)"
 ---
 
 # Token Review — Audit Plugin Context Footprint
@@ -50,7 +50,7 @@ For each check (A1 through E1), evaluate the target file against the described p
 - If found: mark as **OPPORTUNITY** with estimated token savings
 - If not found (already optimized or N/A): mark as **PASS**
 
-Dispatch the `token-review` agent to perform the scanning if available. Otherwise, do the analysis inline.
+Dispatch the `token-reviewer` agent to perform the scanning if available. Otherwise, do the analysis inline.
 
 ## Phase 3: Report
 
@@ -102,7 +102,7 @@ cd "${CLAUDE_PLUGIN_ROOT}" && git status --short
 ```
 Warn if working tree has uncommitted changes. Ask user to confirm before proceeding.
 
-**Skip this check entirely if `--force` was passed.** The `--force` flag is used by `/session-end` which always runs against a dirty worktree (by design — it runs before commit). In that context, the token-review edits are intentionally bundled with the session's other changes.
+**Skip this check entirely if `--force` was passed.** The `--force` flag is used by `/session-review` which always runs against a dirty worktree (by design — it runs before commit). In that context, the token-review edits are intentionally bundled with the session's other changes.
 
 ### For each optimization opportunity:
 1. Create the target reference file (if extracting content)
